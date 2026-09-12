@@ -23,6 +23,7 @@
   function write(key, rows) {
     localStorage.setItem(key, JSON.stringify(rows));
     localStorage.setItem("dkpl.updatedAt", String(Date.now()));
+    window.dispatchEvent(new CustomEvent("dkpl-data-changed", { detail: { key: key } }));
     if (!DKPL.api || !DKPL.api.enabled()) return;
 
     // Rapid scoring taps would otherwise fire a request per ball.
@@ -383,15 +384,23 @@
       return created;
     },
 
-    /** Pull from Sheets when configured; otherwise keep working offline. */
+    /** Pull from Sheets when configured; never wipe local data with an empty remote copy. */
     ready: async function () {
       if (!DKPL.api || !DKPL.api.enabled()) return false;
       try {
         const remote = await DKPL.api.pull();
         if (!remote) return false;
-        if (remote.teams) localStorage.setItem(KEYS.teams, JSON.stringify(remote.teams));
-        if (remote.players) localStorage.setItem(KEYS.players, JSON.stringify(remote.players));
-        if (remote.matches) localStorage.setItem(KEYS.matches, JSON.stringify(remote.matches));
+
+        function merge(key, remoteRows) {
+          const local = read(key);
+          const incoming = remoteRows || [];
+          if (!incoming.length && local.length) return;
+          localStorage.setItem(key, JSON.stringify(incoming.length ? incoming : local));
+        }
+
+        merge(KEYS.teams, remote.teams);
+        merge(KEYS.players, remote.players);
+        merge(KEYS.matches, remote.matches);
         return true;
       } catch (err) {
         console.warn("DKPL remote load failed, using local data", err);

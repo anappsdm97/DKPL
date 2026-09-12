@@ -13,9 +13,14 @@
   async function pull() {
     if (!enabled()) return null;
     const url = cfg.apiBase + (cfg.apiBase.indexOf("?") >= 0 ? "&" : "?") + "action=all";
-    const res = await fetch(url);
+    const res = await fetch(url, { redirect: "follow" });
+    const text = await res.text();
     if (!res.ok) throw new Error("Sheets read failed: " + res.status);
-    return res.json();
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      throw new Error("Sheets returned non-JSON (is doGet deployed?)");
+    }
   }
 
   async function push(entity, rows) {

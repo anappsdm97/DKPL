@@ -23,8 +23,20 @@
     return '<article class="card fixture-card">' + body + title + "</article>";
   }
 
+  /** Same-tab scoring + cross-tab admin + periodic Sheets pull for spectators. */
+  function attachLiveRefresh(draw) {
+    async function refresh() {
+      if (DKPL.api.enabled()) await S.ready();
+      draw();
+    }
+    window.addEventListener("dkpl-data-changed", draw);
+    window.addEventListener("storage", draw);
+    setInterval(refresh, 4000);
+  }
+
   const pages = {
     home: function () {
+      function renderHome() {
       const live = S.liveMatch();
       const upcoming = S.upcomingMatches().slice(0, 3);
       const completed = S.completedMatches();
@@ -44,7 +56,11 @@
         el("liveSlot").innerHTML = live
           ? '<article class="card live-card">' + DKPL.board.miniHtml(live) + DKPL.board.currentPlayers(live) +
             '<a class="btn btn-primary" href="pages/live.html">Open full scoreboard</a></article>'
-          : U.empty("No match in progress right now.", "pages/fixtures.html", "See fixtures");
+          : U.empty(
+              "No live match yet. Create a fixture in Admin, open Scorer, complete setup and tap Start match.",
+              "pages/scorer.html",
+              "Open scorer"
+            );
 
         el("upcomingSlot").innerHTML = upcoming.length
           ? upcoming.map(matchCard).join("")
@@ -82,9 +98,14 @@
           '<p class="muted">' + U.esc(mvp.teamName) + " · " + mvp.runs + " runs · " + mvp.wickets + " wickets</p>" +
           '<p class="score">' + mvp.mvp + " pts</p></div></article>"
         : U.empty("MVP rankings appear after the first match.");
+      }
+
+      renderHome();
+      attachLiveRefresh(renderHome);
     },
 
     teams: function () {
+      function draw() {
       const teams = S.teams();
       el("app").innerHTML = teams.length
         ? '<div class="team-grid">' +
@@ -110,6 +131,9 @@
             .join("") +
           "</div>"
         : U.empty("No teams added yet.", "admin.html", "Add teams");
+      }
+      draw();
+      attachLiveRefresh(draw);
     },
 
     players: function () {
@@ -265,15 +289,8 @@
           : U.empty("No match is being scored right now.", "fixtures.html", "See fixtures");
       }
 
-      async function refresh() {
-        // Pull fresh deliveries so phones other than the scorer's stay current.
-        if (DKPL.api.enabled()) await S.ready();
-        draw();
-      }
-
       draw();
-      setInterval(refresh, 5000);
-      window.addEventListener("storage", draw);
+      attachLiveRefresh(draw);
     }
   };
 
