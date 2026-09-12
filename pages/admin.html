@@ -1,1 +1,56 @@
-<h1>Admin Page</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | DKPL 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html">
+        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
+        <span><strong>DKPL 2026</strong><small>Admin</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
+      <nav class="site-nav">
+        <a href="../index.html">Home</a>
+        <a href="live.html">Live</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a href="points.html">Points</a>
+        <a href="teams.html">Teams</a>
+        <a href="players.html">Players</a>
+        <a href="stats.html">Stats</a>
+        <a class="active" href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Admin console</h1>
+      <p class="muted">Phase 2 will connect login to Apps Script. This shell maps every admin action.</p>
+    </div>
+    <form class="card" id="adminLogin">
+      <label for="pin">Admin PIN</label>
+      <p class="muted" style="margin:8px 0 12px">Local preview only. Replace with authenticated admin login in Phase 2.</p>
+      <input id="pin" name="pin" type="password" required style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#0c2319;color:#fff">
+      <button class="key" type="submit" style="margin-top:12px;width:100%">Enter admin</button>
+    </form>
+    <section id="adminDash" hidden>
+      <div class="menu">
+        <button class="menu-card" type="button" data-panel="teams">Teams<span>Add, edit, delete, upload logo</span></button>
+        <button class="menu-card" type="button" data-panel="players">Players<span>Add, edit, upload photos</span></button>
+        <button class="menu-card" type="button" data-panel="fixtures">Fixtures<span>Create league and knockout matches</span></button>
+        <button class="menu-card" type="button" data-panel="match">Match day<span>Toss, score, edit, publish</span></button>
+        <a class="menu-card admin-card" href="scorer.html">Open scorer<span>Ball-by-ball console</span></a>
+      </div>
+      <article class="card" id="adminPanel" style="margin-top:16px"></article>
+    </section>
+  </main>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/admin.js"></script>
+</body>
+</html>

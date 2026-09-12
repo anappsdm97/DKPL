@@ -1,1 +1,56 @@
-<h1>Fixtures Page</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fixtures | DKPL 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html">
+        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
+        <span><strong>DKPL 2026</strong><small>Fixtures</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
+      <nav class="site-nav">
+        <a href="../index.html">Home</a>
+        <a href="live.html">Live</a>
+        <a class="active" href="fixtures.html">Fixtures</a>
+        <a href="points.html">Points</a>
+        <a href="teams.html">Teams</a>
+        <a href="players.html">Players</a>
+        <a href="stats.html">Stats</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Match schedule</h1>
+      <p class="muted">15 league matches, then Semi Final 1 (1 vs 4), Semi Final 2 (2 vs 3), and the Final.</p>
+    </div>
+    <div class="card table-wrap">
+      <table>
+        <thead>
+          <tr><th>Match</th><th>Stage</th><th>Fixture</th><th>When</th><th>Status</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const rows = await DKPL.api.get("fixtures", DKPL.demo.fixtures);
+      document.getElementById("rows").innerHTML = rows.map(function (m) {
+        return "<tr><td>" + m.MatchID + "</td><td>" + m.Stage + "</td><td>" + m.TeamA + " vs " + m.TeamB +
+          "</td><td>" + m.Date + "</td><td>" + m.Status + (m.Winner ? " · " + m.Winner : "") + "</td></tr>";
+      }).join("");
+    });
+  </script>
+</body>
+</html>

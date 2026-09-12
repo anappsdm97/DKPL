@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 72" role="img" aria-label="DKPL 2026">
+  <defs>
+    <linearGradient id="ball" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f3d36a"/>
+      <stop offset="100%" stop-color="#c4921a"/>
+    </linearGradient>
+  </defs>
+  <circle cx="36" cy="36" r="28" fill="url(#ball)"/>
+  <path d="M22 18c8 8 8 28 0 36" fill="none" stroke="#7a1d1d" stroke-width="2.2"/>
+  <path d="M50 18c-8 8-8 28 0 36" fill="none" stroke="#7a1d1d" stroke-width="2.2"/>
+  <text x="74" y="34" font-family="Arial Black, Arial, sans-serif" font-size="28" fill="#f4e6b5" letter-spacing="1">DKPL</text>
+  <text x="74" y="56" font-family="Arial, sans-serif" font-size="14" fill="#d4af37" letter-spacing="4">2026</text>
+</svg>

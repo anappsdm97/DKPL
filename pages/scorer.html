@@ -1,1 +1,60 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scorer | DKPL 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html">
+        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
+        <span><strong>DKPL 2026</strong><small>Scorer</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
+      <nav class="site-nav">
+        <a href="../index.html">Home</a>
+        <a href="live.html">Live</a>
+        <a href="admin.html">Admin</a>
+        <a class="active" href="scorer.html">Scorer</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Ball-by-ball scorer</h1>
+      <p class="muted">Phase 3 will persist each ball to the BallByBall sheet. This preview applies cricket logic locally.</p>
+    </div>
+    <article class="card live-card">
+      <span class="badge live">Scoring</span>
+      <div class="score-line">
+        <div class="team-name">Batting team</div>
+        <div class="score" id="scorerScore">0/0</div>
+      </div>
+      <p class="muted" id="scorerOvers">0.0 Overs</p>
+      <p class="muted" id="strikeNote">Strike: Batter 1</p>
+    </article>
+    <div class="card" style="margin-top:14px">
+      <div class="score-keys" id="scoreKeys">
+        <button class="key" type="button" data-key="0">0</button>
+        <button class="key" type="button" data-key="1">1</button>
+        <button class="key" type="button" data-key="2">2</button>
+        <button class="key" type="button" data-key="3">3</button>
+        <button class="key" type="button" data-key="4">4</button>
+        <button class="key" type="button" data-key="6">6</button>
+        <button class="key extra" type="button" data-key="WD">WD</button>
+        <button class="key extra" type="button" data-key="NB">NB</button>
+        <button class="key out" type="button" data-key="OUT">OUT</button>
+        <button class="key undo" type="button" data-key="UNDO">UNDO</button>
+      </div>
+      <p class="notice">Wides and no-balls add a run without increasing the ball count. Odds change strike. Six legal balls complete an over and swap strike.</p>
+    </div>
+  </main>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/scorer.js"></script>
+</body>
+</html>

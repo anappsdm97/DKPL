@@ -1,1 +1,49 @@
-<h1>Players Page</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Players | DKPL 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html">
+        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
+        <span><strong>DKPL 2026</strong><small>Players</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
+      <nav class="site-nav">
+        <a href="../index.html">Home</a>
+        <a href="live.html">Live</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a href="points.html">Points</a>
+        <a href="teams.html">Teams</a>
+        <a class="active" href="players.html">Players</a>
+        <a href="stats.html">Stats</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Players</h1>
+      <p class="muted">Photos, teams, and roles. Statistics update from ball-by-ball scoring.</p>
+    </div>
+    <div class="player-grid" id="list"></div>
+  </main>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const players = await DKPL.api.get("players", DKPL.demo.players);
+      document.getElementById("list").innerHTML = players.map(function (p) {
+        return '<article class="card person"><div class="avatar">' + p.PlayerName.charAt(0) + '</div><div><h3>' +
+          p.PlayerName + '</h3><p class="muted">' + p.TeamName + ' · ' + p.Role + '</p></div></article>';
+      }).join("");
+    });
+  </script>
+</body>
+</html>

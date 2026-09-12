@@ -1,1 +1,57 @@
-<h1>Statistics Page</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistics | DKPL 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../index.html">
+        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
+        <span><strong>DKPL 2026</strong><small>Statistics</small></span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
+      <nav class="site-nav">
+        <a href="../index.html">Home</a>
+        <a href="live.html">Live</a>
+        <a href="fixtures.html">Fixtures</a>
+        <a href="points.html">Points</a>
+        <a href="teams.html">Teams</a>
+        <a href="players.html">Players</a>
+        <a class="active" href="stats.html">Stats</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="page-title">
+      <h1>Statistics &amp; MVP</h1>
+      <p class="muted">Most runs, wickets, highest score, best bowling, and auto-generated MVP ranking.</p>
+    </div>
+    <div class="grid grid-3" id="stats"></div>
+  </main>
+  <script src="../js/config.js"></script>
+  <script src="../js/api.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+      const s = await DKPL.api.get("stats", DKPL.demo.stats);
+      const blocks = [
+        ["Most runs", s.mostRuns],
+        ["Most wickets", s.mostWickets],
+        ["Highest score", s.highestScore],
+        ["Best bowling", s.bestBowling],
+        ["MVP ranking", s.mvp]
+      ];
+      document.getElementById("stats").innerHTML = blocks.map(function (b) {
+        const row = b[1][0];
+        return '<article class="card"><p class="kicker">' + b[0] + '</p><h3 style="margin-top:8px">' + row.player +
+          '</h3><p class="muted">' + row.team + '</p><p class="score">' + row.value + '</p></article>';
+      }).join("");
+    });
+  </script>
+</body>
+</html>
