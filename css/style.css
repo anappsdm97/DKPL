@@ -1,57 +1,68 @@
 *{
     margin:0;
     padding:0;
-    box-sizing:border-box;
+  * box-sizing:border-box;
 }
+
 body{
-    background:#f4f6f9;
-    font-family:Arial,sans-serif;
+ *  font-family:Arial, sans-serif;
+ *  background:#f4f6f8;
 }
+
 header{
-    text-align:center;
-    background:linear-gradient(135deg,#0a4a2f,#135d91);
-    color:white;
-    padding:30px;
+ *  text-align:center;
+    color:whi*e;
+    background:linear-gradient(*35deg,#0a4a2f,#135d91);
+    paddin*:30px;
 }
+
 .logo{
     width:220px;
-    max-width:90%;
-    margin-bottom:15px;
+*   max-width:90%;
+    border-radiu*:12px;
 }
+
 .hero{
-    background:white;
+    background:wh*te;
     margin:20px;
-    padding:20px;
+    padding:2*px;
     border-radius:12px;
-    text-align:center;
+    te*t-align:center;
 }
+
 .hero h2{
-    margin-bottom:10px;
+    m*rgin-bottom:10px;
+    color:#0a4a2*;
 }
+
 .menu{
     display:grid;
-    gap:15px;
+    *ap:15px;
     padding:20px;
 }
-.menu-card{
+
+.men*-card{
     display:block;
-    text-decoration:none;
-    background:white;
+    text*decoration:none;
+    background:wh*te;
     color:#0a4a2f;
-    padding:18px;
+    padding*20px;
     text-align:center;
-    border-radius:12px;
-    font-weight:bold;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    b*rder-radius:12px;
+    font-weight:*old;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
 }
+
 .menu-card:hover{
     background:#0a4a2f;
     color:white;
 }
+
 .admin-card{
     background:#ffd700;
     color:black;
 }
+
 @media(min-width:768px){
     .menu{
         grid-template-columns:repeat(3,1fr);
