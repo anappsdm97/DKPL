@@ -2,7 +2,7 @@ window.DKPL_CONFIG = {
   tournamentName: "DKPL 2026",
   fullName: "Doddakittadahalli Premier League 2026",
   season: "2026",
-  logo: "images/dkpl-logo.svg",
+  logo: "images/dkpl-logo.png",
   teamCount: 6,
   leagueMatches: 15,
   qualify: 4,
@@ -38,7 +38,6 @@ window.DKPL_CONFIG = {
     stumping: 10
   },
 
-  // Paste the Google Apps Script Web App URL here after deploying apps-script/Code.gs.
-  // Until then everything is saved in this browser only.
-  apiBase: ""
+  // Google Sheet: DKPL-2026 (script must be opened via Extensions → Apps Script on that file).
+  apiBase: "https://script.google.com/macros/s/AKfycbyQW9O9WMyTECa-HNMGkolWjy4qzu40m4yII7Lrez-d-ZT9tEnzL26qRWUSez7JpHig/exec"
 };
