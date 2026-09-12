@@ -1,2 +1,1 @@
-PlayerID,TeamID,PlayerName,PhotoURL,Role
-P01,T01,Ravi,,Batter
+PlayerID,TeamID,PlayerName,Role,PhotoURL

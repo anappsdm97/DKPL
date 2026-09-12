@@ -4,46 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Players | DKPL 2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#07150f">
+  <link rel="icon" href="../images/dkpl-logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="../index.html">
-        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
-        <span><strong>DKPL 2026</strong><small>Players</small></span>
-      </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
-      <nav class="site-nav">
-        <a href="../index.html">Home</a>
-        <a href="live.html">Live</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a href="points.html">Points</a>
-        <a href="teams.html">Teams</a>
-        <a class="active" href="players.html">Players</a>
-        <a href="stats.html">Stats</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
   <main class="wrap">
     <div class="page-title">
       <h1>Players</h1>
-      <p class="muted">Photos, teams, and roles. Statistics update from ball-by-ball scoring.</p>
+      <p class="muted">Season runs, wickets and MVP points, updated from ball-by-ball scoring.</p>
     </div>
-    <div class="player-grid" id="list"></div>
+    <div class="filter-bar">
+      <label for="teamFilter">Filter by team</label>
+      <select id="teamFilter"></select>
+    </div>
+    <div id="app"></div>
   </main>
+  <div id="siteFooter"></div>
+
   <script src="../js/config.js"></script>
+  <script src="../js/engine.js"></script>
   <script src="../js/api.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/scoreboard.js"></script>
+  <script src="../js/pages.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      const players = await DKPL.api.get("players", DKPL.demo.players);
-      document.getElementById("list").innerHTML = players.map(function (p) {
-        return '<article class="card person"><div class="avatar">' + p.PlayerName.charAt(0) + '</div><div><h3>' +
-          p.PlayerName + '</h3><p class="muted">' + p.TeamName + ' · ' + p.Role + '</p></div></article>';
-      }).join("");
-    });
+    document.addEventListener("DOMContentLoaded", function () { DKPL.start("players"); });
   </script>
 </body>
 </html>

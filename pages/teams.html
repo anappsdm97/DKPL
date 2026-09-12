@@ -4,46 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Teams | DKPL 2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#07150f">
+  <link rel="icon" href="../images/dkpl-logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="../index.html">
-        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
-        <span><strong>DKPL 2026</strong><small>Teams</small></span>
-      </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
-      <nav class="site-nav">
-        <a href="../index.html">Home</a>
-        <a href="live.html">Live</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a href="points.html">Points</a>
-        <a class="active" href="teams.html">Teams</a>
-        <a href="players.html">Players</a>
-        <a href="stats.html">Stats</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
   <main class="wrap">
     <div class="page-title">
       <h1>Teams</h1>
-      <p class="muted">Six squads. Logos and captains will sync from the Teams sheet.</p>
+      <p class="muted">Logos, captains and full squads for DKPL 2026.</p>
     </div>
-    <div class="team-grid" id="list"></div>
+    <div id="app"></div>
   </main>
+  <div id="siteFooter"></div>
+
   <script src="../js/config.js"></script>
+  <script src="../js/engine.js"></script>
   <script src="../js/api.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/scoreboard.js"></script>
+  <script src="../js/pages.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      const teams = await DKPL.api.get("teams", DKPL.demo.teams);
-      document.getElementById("list").innerHTML = teams.map(function (t) {
-        return '<article class="card person"><div class="avatar">' + t.TeamName.charAt(0) + '</div><div><h3>' +
-          t.TeamName + '</h3><p class="muted">Captain: ' + t.Captain + '</p></div></article>';
-      }).join("");
-    });
+    document.addEventListener("DOMContentLoaded", function () { DKPL.start("teams"); });
   </script>
 </body>
 </html>

@@ -4,54 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Score | DKPL 2026</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#07150f">
+  <link rel="icon" href="../images/dkpl-logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="../index.html">
-        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
-        <span><strong>DKPL 2026</strong><small>Live Score</small></span>
-      </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
-      <nav class="site-nav">
-        <a href="../index.html">Home</a>
-        <a class="active" href="live.html">Live</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a href="points.html">Points</a>
-        <a href="teams.html">Teams</a>
-        <a href="players.html">Players</a>
-        <a href="stats.html">Stats</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
   <main class="wrap">
     <div class="page-title">
       <h1>Live scoreboard</h1>
-      <p class="muted">Realtime innings view with batters, bowler, and match situation.</p>
+      <p class="muted">Refreshes automatically while the match is being scored.</p>
     </div>
-    <section class="board">
-      <article class="card live-card" id="board"></article>
-    </section>
+    <div id="app"></div>
   </main>
+  <div id="siteFooter"></div>
+
   <script src="../js/config.js"></script>
+  <script src="../js/engine.js"></script>
   <script src="../js/api.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/scoreboard.js"></script>
+  <script src="../js/pages.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      const data = await DKPL.api.get("home", DKPL.demo.home);
-      const live = data.live;
-      document.getElementById("board").innerHTML =
-        '<span class="badge live">Live</span>' +
-        '<div class="score-line"><div class="team-name">' + live.batting + '</div><div class="score">' + live.score + '</div></div>' +
-        '<p class="muted">' + live.overs + ' Overs · ' + live.teamA + ' vs ' + live.teamB + '</p>' +
-        '<div class="batter-row"><span>' + live.striker + '</span><span>' + live.nonStriker + '</span></div>' +
-        '<div class="bowler-row"><span>Bowler</span><span>' + live.bowler + '</span></div>' +
-        '<div class="situation">' + live.situation + '</div>';
-    });
+    document.addEventListener("DOMContentLoaded", function () { DKPL.start("live"); });
   </script>
 </body>
 </html>

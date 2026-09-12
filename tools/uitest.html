@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Scorer UI test</title>
+<style>body{font:12px monospace}iframe{width:500px;height:900px;border:1px solid #ccc}</style>
+</head>
+<body>
+<pre id="out">running…</pre>
+<iframe id="frame"></iframe>
+<script>
+  const log = [];
+  let errors = 0;
+  sessionStorage.setItem("dkpl.admin", "yes");
+
+  const matches = JSON.parse(localStorage.getItem("dkpl.matches") || "[]");
+  const live = matches.filter(function (m) { return m.status === "Live"; })[0];
+  const frame = document.getElementById("frame");
+  frame.src = "../pages/scorer.html?match=" + encodeURIComponent(live ? live.id : "");
+
+  const SEQUENCE = ["1", "4", "WD", "0", "6", "2", "OUT", "1", "0", "3", "NB", "4", "6", "1", "OUT", "0", "2", "1", "UNDO", "1"];
+  let step = 0;
+  let actions = 0;
+
+  frame.addEventListener("load", function () {
+    frame.contentWindow.addEventListener("error", function (e) {
+      errors++;
+      log.push("JS ERROR: " + e.message);
+    });
+
+    const timer = setInterval(function () {
+      const doc = frame.contentDocument;
+
+      const modal = doc.querySelector(".modal .option");
+      if (modal) {
+        const title = doc.querySelector(".modal h3").textContent;
+        log.push("modal: " + title + " -> " + modal.textContent.trim().split("\n")[0]);
+        modal.click();
+        return;
+      }
+
+      if (step >= SEQUENCE.length) {
+        clearInterval(timer);
+        report();
+        return;
+      }
+
+      const key = SEQUENCE[step++];
+      const btn = doc.querySelector('#scoreKeys button[data-key="' + key + '"]');
+      if (!btn) {
+        log.push("key " + key + " unavailable (innings state changed)");
+        return;
+      }
+      btn.click();
+      actions++;
+      const score = doc.querySelector(".team-score strong");
+      log.push("tap " + key + " -> " + (score ? doc.querySelectorAll(".team-score strong")[1].textContent : "?"));
+    }, 120);
+
+    function report() {
+      const doc = frame.contentDocument;
+      const scores = doc.querySelectorAll(".team-score strong");
+      const overs = doc.querySelectorAll(".team-score span");
+      const situation = doc.querySelector(".situation");
+      const bowler = doc.querySelector(".mini-cards .table-wrap:last-child tbody td");
+      log.push("");
+      log.push("final score: " + (scores[1] ? scores[1].textContent : "?") + " " + (overs[1] ? overs[1].textContent : ""));
+      log.push("situation: " + (situation ? situation.textContent : "-"));
+      log.push("current bowler: " + (bowler ? bowler.textContent : "-"));
+      log.push("taps applied: " + actions + ", js errors: " + errors);
+      log.push(errors === 0 ? "UI FLOW OK" : "UI FLOW HAD ERRORS");
+      document.getElementById("out").textContent = log.join("\n");
+    }
+  });
+</script>
+</body>
+</html>

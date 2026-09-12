@@ -1,145 +1,226 @@
+/**
+ * DKPL 2026 backend.
+ *
+ * Deploy: Extensions > Apps Script > paste this file > Deploy > New deployment >
+ * Web app > Execute as "Me" > Access "Anyone" > copy the URL into js/config.js (apiBase).
+ *
+ * Sheets used: Teams, Players, Matches, BallByBall.
+ * BallByBall is written for analysis; the app reads Matches.
+ */
+
+var SHEETS = {
+  teams: { name: "Teams", headers: ["TeamID", "TeamName", "Short", "Captain", "Colour", "LogoURL"] },
+  players: { name: "Players", headers: ["PlayerID", "TeamID", "PlayerName", "Role", "PhotoURL"] },
+  matches: {
+    name: "Matches",
+    headers: [
+      "MatchID", "Stage", "TeamA", "TeamB", "Overs", "Venue", "Date",
+      "TossWinner", "Decision", "Status", "Winner", "Result", "PlayerOfMatch", "InningsJSON"
+    ]
+  },
+  ballbyball: {
+    name: "BallByBall",
+    headers: [
+      "MatchID", "Innings", "Over", "Ball", "Batsman", "NonStriker", "Bowler",
+      "Runs", "ExtraType", "ExtraRuns", "Wicket", "DismissalType", "PlayerOut", "Timestamp"
+    ]
+  }
+};
+
 function json(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function sheet(name) {
-  return SpreadsheetApp.getActive().getSheetByName(name);
+function sheetFor(key) {
+  var spec = SHEETS[key];
+  var ss = SpreadsheetApp.getActive();
+  var sheet = ss.getSheetByName(spec.name);
+  if (!sheet) {
+    sheet = ss.insertSheet(spec.name);
+    sheet.appendRow(spec.headers);
+  }
+  return sheet;
 }
 
-function rowsToObjects(name) {
-  const sh = sheet(name);
-  if (!sh) return [];
-  const values = sh.getDataRange().getValues();
-  const headers = values.shift();
+function readRows(key) {
+  var sheet = sheetFor(key);
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) return [];
+  var headers = values.shift();
   return values
-    .filter(function (row) { return row.join("").trim() !== ""; })
+    .filter(function (row) {
+      return String(row[0]).trim() !== "";
+    })
     .map(function (row) {
-      const obj = {};
-      headers.forEach(function (h, i) { obj[h] = row[i]; });
+      var obj = {};
+      headers.forEach(function (h, i) {
+        obj[h] = row[i];
+      });
       return obj;
     });
 }
 
-function doGet(e) {
-  const action = (e.parameter.action || "home").toLowerCase();
+function writeRows(key, rows) {
+  var spec = SHEETS[key];
+  var sheet = sheetFor(key);
+  sheet.clear();
+  sheet.appendRow(spec.headers);
+  if (rows.length) {
+    sheet.getRange(2, 1, rows.length, spec.headers.length).setValues(rows);
+  }
+}
 
-  if (action === "teams") return json(rowsToObjects("Teams"));
-  if (action === "players") return json(rowsToObjects("Players"));
-  if (action === "fixtures") return json(rowsToObjects("Matches"));
-  if (action === "points") return json(rowsToObjects("PointsTable"));
-  if (action === "mvp") return json(rowsToObjects("MVP"));
-  if (action === "live") return json(buildLive());
-  if (action === "stats") return json(buildStats());
-  if (action === "home") return json(buildHome());
+/* ------------------------------------------------------------- mapping */
+
+function teamToRow(t) {
+  return [t.id, t.name || "", t.short || "", t.captain || "", t.colour || "", t.logo || ""];
+}
+
+function rowToTeam(r) {
+  return { id: r.TeamID, name: r.TeamName, short: r.Short, captain: r.Captain, colour: r.Colour, logo: r.LogoURL };
+}
+
+function playerToRow(p) {
+  return [p.id, p.teamId || "", p.name || "", p.role || "", p.photo || ""];
+}
+
+function rowToPlayer(r) {
+  return { id: r.PlayerID, teamId: r.TeamID, name: r.PlayerName, role: r.Role, photo: r.PhotoURL };
+}
+
+function matchToRow(m) {
+  var toss = m.toss || {};
+  var result = m.result || {};
+  return [
+    m.id,
+    m.stage || "",
+    m.teamA || "",
+    m.teamB || "",
+    m.overs || "",
+    m.venue || "",
+    m.date || "",
+    toss.winnerId || "",
+    toss.decision || "",
+    m.status || "",
+    result.winnerId || "",
+    result.text || "",
+    m.playerOfMatch || "",
+    JSON.stringify(m.innings || [])
+  ];
+}
+
+function rowToMatch(r) {
+  var innings = [];
+  try {
+    innings = r.InningsJSON ? JSON.parse(r.InningsJSON) : [];
+  } catch (err) {
+    innings = [];
+  }
+  return {
+    id: r.MatchID,
+    stage: r.Stage,
+    teamA: r.TeamA,
+    teamB: r.TeamB,
+    overs: Number(r.Overs) || 0,
+    venue: r.Venue,
+    date: r.Date,
+    toss: { winnerId: r.TossWinner, decision: r.Decision },
+    status: r.Status,
+    result: r.Result ? { winnerId: r.Winner, text: r.Result } : null,
+    playerOfMatch: r.PlayerOfMatch,
+    innings: innings
+  };
+}
+
+/** Flattens every stored delivery into the BallByBall sheet. */
+function rebuildBallByBall(matches) {
+  var rows = [];
+  matches.forEach(function (m) {
+    (m.innings || []).forEach(function (inn, inningsIndex) {
+      var legal = 0;
+      var striker = inn.openers ? inn.openers.strikerId : "";
+      var nonStriker = inn.openers ? inn.openers.nonStrikerId : "";
+
+      (inn.deliveries || []).forEach(function (d) {
+        var overIndex = Math.floor(legal / 6);
+        var bowler = (inn.overBowlers || [])[overIndex] || "";
+        var isLegal = d.extra !== "WD" && d.extra !== "NB";
+        var extraRuns = isLegal ? 0 : 1;
+
+        rows.push([
+          m.id,
+          inningsIndex + 1,
+          overIndex,
+          (legal % 6) + 1,
+          striker,
+          nonStriker,
+          bowler,
+          d.runs || 0,
+          d.extra || "-",
+          extraRuns,
+          d.wicket ? "Yes" : "No",
+          d.wicket ? d.wicket.type : "-",
+          d.wicket ? d.wicket.outBatsmanId : "-",
+          new Date()
+        ]);
+
+        if (isLegal) legal += 1;
+        if ((d.runs || 0) % 2 === 1) {
+          var swap = striker;
+          striker = nonStriker;
+          nonStriker = swap;
+        }
+        if (d.wicket) {
+          if (striker === d.wicket.outBatsmanId) striker = d.wicket.newBatsmanId || "";
+          else if (nonStriker === d.wicket.outBatsmanId) nonStriker = d.wicket.newBatsmanId || "";
+        }
+        if (isLegal && legal % 6 === 0) {
+          var end = striker;
+          striker = nonStriker;
+          nonStriker = end;
+        }
+      });
+    });
+  });
+  writeRows("ballbyball", rows);
+}
+
+/* ------------------------------------------------------------ handlers */
+
+function doGet(e) {
+  var action = (e && e.parameter && e.parameter.action) || "all";
+
+  if (action === "all") {
+    return json({
+      teams: readRows("teams").map(rowToTeam),
+      players: readRows("players").map(rowToPlayer),
+      matches: readRows("matches").map(rowToMatch)
+    });
+  }
+  if (action === "teams") return json(readRows("teams").map(rowToTeam));
+  if (action === "players") return json(readRows("players").map(rowToPlayer));
+  if (action === "matches") return json(readRows("matches").map(rowToMatch));
 
   return json({ error: "Unknown action" });
-}
-
-function buildHome() {
-  const matches = rowsToObjects("Matches");
-  const liveMatch = matches.find(function (m) { return String(m.Status).toLowerCase() === "live"; }) || null;
-  const upcoming = matches.filter(function (m) { return String(m.Status).toLowerCase() === "upcoming"; }).slice(0, 3);
-  const completed = matches.filter(function (m) { return String(m.Status).toLowerCase() === "completed"; });
-  const latest = completed[completed.length - 1] || null;
-
-  return {
-    preview: false,
-    live: liveMatch ? {
-      matchId: liveMatch.MatchID,
-      teamA: liveMatch.TeamA,
-      teamB: liveMatch.TeamB,
-      batting: liveMatch.TeamA,
-      score: "0/0",
-      overs: "0.0",
-      striker: "-",
-      nonStriker: "-",
-      bowler: "-",
-      situation: "Innings in progress",
-      venue: liveMatch.Venue
-    } : {
-      matchId: "",
-      teamA: "-",
-      teamB: "-",
-      batting: "-",
-      score: "-",
-      overs: "-",
-      striker: "-",
-      nonStriker: "-",
-      bowler: "-",
-      situation: "No live match",
-      venue: "-"
-    },
-    upcoming: upcoming.map(function (m) {
-      return {
-        matchId: m.MatchID,
-        teamA: m.TeamA,
-        teamB: m.TeamB,
-        date: m.Date,
-        venue: m.Venue,
-        stage: m.Stage
-      };
-    }),
-    latest: latest ? {
-      teamA: latest.TeamA,
-      teamB: latest.TeamB,
-      result: (latest.Winner || "") + " won",
-      scores: latest.Stage
-    } : {
-      teamA: "-",
-      teamB: "-",
-      result: "No result yet",
-      scores: "-"
-    },
-    stats: {
-      teams: rowsToObjects("Teams").length,
-      leagueMatches: 15,
-      completed: completed.length,
-      remaining: Math.max(0, 15 - completed.length)
-    }
-  };
-}
-
-function buildLive() {
-  return buildHome().live;
-}
-
-function buildStats() {
-  const mvp = rowsToObjects("MVP");
-  return {
-    mostRuns: mvp.slice().sort(function (a, b) { return Number(b.Runs) - Number(a.Runs); }).slice(0, 5)
-      .map(function (p) { return { player: p.PlayerID, team: "", value: String(p.Runs) }; }),
-    mostWickets: mvp.slice().sort(function (a, b) { return Number(b.Wickets) - Number(a.Wickets); }).slice(0, 5)
-      .map(function (p) { return { player: p.PlayerID, team: "", value: String(p.Wickets) }; }),
-    highestScore: [],
-    bestBowling: [],
-    mvp: mvp.slice().sort(function (a, b) { return Number(b.MVPPoints) - Number(a.MVPPoints); }).slice(0, 5)
-      .map(function (p) { return { player: p.PlayerID, team: "", value: String(p.MVPPoints) }; })
-  };
 }
 
 function doPost(e) {
-  const payload = JSON.parse(e.postData.contents || "{}");
-  if (payload.action === "ball") {
-    const sh = sheet("BallByBall");
-    sh.appendRow([
-      payload.MatchID,
-      payload.Innings,
-      payload.Over,
-      payload.Ball,
-      payload.Batsman,
-      payload.NonStriker,
-      payload.Bowler,
-      payload.Runs,
-      payload.ExtraType || "-",
-      payload.ExtraRuns || 0,
-      payload.Wicket || "No",
-      payload.DismissalType || "-",
-      payload.PlayerOut || "-",
-      new Date()
-    ]);
+  var payload = JSON.parse(e.postData.contents || "{}");
+  if (payload.action !== "save") return json({ error: "Unknown action" });
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    if (payload.entity === "teams") writeRows("teams", (payload.rows || []).map(teamToRow));
+    else if (payload.entity === "players") writeRows("players", (payload.rows || []).map(playerToRow));
+    else if (payload.entity === "matches") {
+      writeRows("matches", (payload.rows || []).map(matchToRow));
+      rebuildBallByBall(payload.rows || []);
+    } else {
+      return json({ error: "Unknown entity" });
+    }
     return json({ ok: true });
+  } finally {
+    lock.releaseLock();
   }
-  return json({ error: "Unknown action" });
 }

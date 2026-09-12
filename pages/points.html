@@ -4,53 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Points Table | DKPL 2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#07150f">
+  <link rel="icon" href="../images/dkpl-logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="../index.html">
-        <img src="../images/dkpl-logo.svg" alt="DKPL 2026 logo">
-        <span><strong>DKPL 2026</strong><small>Points Table</small></span>
-      </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
-      <nav class="site-nav">
-        <a href="../index.html">Home</a>
-        <a href="live.html">Live</a>
-        <a href="fixtures.html">Fixtures</a>
-        <a class="active" href="points.html">Points</a>
-        <a href="teams.html">Teams</a>
-        <a href="players.html">Players</a>
-        <a href="stats.html">Stats</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
   <main class="wrap">
     <div class="page-title">
       <h1>Points table</h1>
-      <p class="muted">Top 4 qualify. Knockouts: Rank 1 vs Rank 4, Rank 2 vs Rank 3.</p>
+      <p class="muted">Updated automatically after every published result.</p>
     </div>
-    <div class="card table-wrap">
-      <table>
-        <thead>
-          <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>Pts</th><th>NRR</th></tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
+    <div id="app"></div>
   </main>
+  <div id="siteFooter"></div>
+
   <script src="../js/config.js"></script>
+  <script src="../js/engine.js"></script>
   <script src="../js/api.js"></script>
+  <script src="../js/store.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/scoreboard.js"></script>
+  <script src="../js/pages.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", async function () {
-      const rows = await DKPL.api.get("points", DKPL.demo.points);
-      document.getElementById("rows").innerHTML = rows.map(function (t, i) {
-        return "<tr><td>" + (i + 1) + "</td><td>" + t.TeamName + "</td><td>" + t.Played + "</td><td>" + t.Won +
-          "</td><td>" + t.Lost + "</td><td>" + t.Points + "</td><td>" + t.NRR + "</td></tr>";
-      }).join("");
-    });
+    document.addEventListener("DOMContentLoaded", function () { DKPL.start("points"); });
   </script>
 </body>
 </html>

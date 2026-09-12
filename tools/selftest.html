@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DKPL self test</title>
+</head>
+<body>
+<pre id="out">running…</pre>
+<script src="../js/config.js"></script>
+<script src="../js/engine.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/scoreboard.js"></script>
+<script>
+(function () {
+  const lines = [];
+  let failures = 0;
+
+  function check(name, actual, expected) {
+    const ok = String(actual) === String(expected);
+    if (!ok) failures++;
+    lines.push((ok ? "PASS  " : "FAIL  ") + name + " = " + actual + (ok ? "" : " (expected " + expected + ")"));
+  }
+
+  function note(text) {
+    lines.push("      " + text);
+  }
+
+  try {
+    const S = DKPL.store;
+    const E = DKPL.engine;
+
+    S.seedSample();
+    check("teams seeded", S.teams().length, 6);
+    check("players seeded", S.players().length, 48);
+    check("league fixtures", S.matches().length, 15);
+
+    const teams = S.teams();
+    const a = teams[0];
+    const b = teams[1];
+    const squadA = S.squad(a.id);
+    const squadB = S.squad(b.id);
+    check("max wickets (8 players)", S.maxWickets(a.id), 7);
+
+    let match = S.saveMatch({
+      stage: "League",
+      teamA: a.id,
+      teamB: b.id,
+      overs: 6,
+      venue: "Test",
+      date: "",
+      toss: { winnerId: a.id, decision: "bat" },
+      status: "Live",
+      innings: [E.newInnings(a.id, b.id, null)],
+      result: null
+    });
+
+    // Innings 1: 14 runs per over, one wicket in the third over.
+    const inn1 = match.innings[0];
+    inn1.openers = { strikerId: squadA[0].id, nonStrikerId: squadA[1].id };
+    let nextBatter = 2;
+    for (let over = 0; over < 6; over++) {
+      inn1.overBowlers.push(squadB[over % squadB.length].id);
+      const pattern = [1, 0, 4, 2, 6, 1];
+      for (let ball = 0; ball < 6; ball++) {
+        if (over === 2 && ball === 3) {
+          const state = E.computeInnings(inn1, 6, 7);
+          inn1.deliveries.push({
+            runs: 0,
+            extra: null,
+            wicket: { type: "Caught", outBatsmanId: state.strikerId, fielderId: squadB[3].id, newBatsmanId: squadA[nextBatter++].id }
+          });
+        } else {
+          inn1.deliveries.push({ runs: pattern[ball], extra: null, wicket: null });
+        }
+      }
+    }
+    // One wide and one no-ball with 4 off the bat, added to the last over.
+    inn1.deliveries.push({ runs: 0, extra: "WD", wicket: null });
+    inn1.deliveries.push({ runs: 4, extra: "NB", wicket: null });
+
+    let s1 = E.computeInnings(inn1, 6, 7);
+    // 6 overs x (1+0+4+2+6+1) = 84, minus the 2 runs replaced by the wicket ball, plus 1 wide + 5 no-ball.
+    check("innings 1 score", s1.runs + "/" + s1.wickets, "88/1");
+    check("innings 1 overs", s1.oversText, "6.0");
+    check("innings 1 complete", s1.complete, true);
+    check("extras counted", s1.extras.total, 2);
+    note("wide + no-ball did not add legal balls (still 6.0 overs)");
+
+    const bowlerFirstOver = inn1.overBowlers[0];
+    check("bowler 1 conceded", s1.bowl[bowlerFirstOver].runs, 14);
+    check("bowler 1 overs", E.oversText(s1.bowl[bowlerFirstOver].balls), "1.0");
+    check("catch credited to fielder", s1.field[squadB[3].id].catches, 1);
+    check("wicket credited to bowler", s1.bowl[inn1.overBowlers[2]].wickets, 1);
+
+    // Strike rotation: opener 1 faced ball 1 (single) then swapped.
+    const opener1 = s1.bat[squadA[0].id];
+    note("opener 1: " + opener1.runs + " off " + opener1.balls + ", 4s " + opener1.fours + ", 6s " + opener1.sixes);
+
+    // Undo the no-ball and confirm the score drops.
+    inn1.deliveries.pop();
+    check("undo removes no-ball", E.computeInnings(inn1, 6, 7).runs, 83);
+    inn1.deliveries.push({ runs: 4, extra: "NB", wicket: null });
+
+    // Innings 2: chase 89, scoring 4 an over.
+    match.innings.push(E.newInnings(b.id, a.id, s1.runs + 1));
+    const inn2 = match.innings[1];
+    inn2.openers = { strikerId: squadB[0].id, nonStrikerId: squadB[1].id };
+    for (let over = 0; over < 6; over++) {
+      inn2.overBowlers.push(squadA[over % squadA.length].id);
+      [0, 1, 0, 1, 0, 2].forEach(function (r) {
+        inn2.deliveries.push({ runs: r, extra: null, wicket: null });
+      });
+    }
+    S.saveMatch(match);
+
+    const s2 = E.computeInnings(inn2, 6, 7);
+    check("innings 2 score", s2.runs + "/" + s2.wickets, "24/0");
+    check("target set", s2.target, 89);
+    check("innings 2 complete", s2.complete, true);
+
+    const result = E.resultText(match, S.teamName, 6, 7);
+    check("result text", result.text, a.name + " won by 64 runs");
+
+    match.result = result;
+    match.status = "Completed";
+    const mvp = E.matchMvp(match, 6, 7);
+    match.playerOfMatch = mvp[0].playerId;
+    S.saveMatch(match);
+    note("player of the match: " + S.playerName(mvp[0].playerId) + " with " + mvp[0].points + " MVP points");
+
+    const table = S.pointsTable();
+    const winnerRow = table.find(function (r) { return r.teamId === a.id; });
+    const loserRow = table.find(function (r) { return r.teamId === b.id; });
+    check("winner points", winnerRow.points, 2);
+    check("winner top of table", table[0].teamId === a.id, true);
+    check("loser played", loserRow.played, 1);
+    check("winner NRR", winnerRow.nrr, Number((88 / 6 - 24 / 6).toFixed(3)));
+
+    const boards = S.leaderboards();
+    check("most runs list", boards.mostRuns.length > 0, true);
+    check("mvp list", boards.mvp.length > 0, true);
+    note("top run scorer: " + boards.mostRuns[0].name + " " + boards.mostRuns[0].runs);
+
+    // Rendering must not throw.
+    const html = DKPL.board.fullHtml(match);
+    check("board renders", html.indexOf("undefined") < 0 && html.length > 500, true);
+
+    // MVP formula spot checks.
+    check("MVP: 40 (4x4, 2x6)", E.mvpPoints({ runs: 40, balls: 20, fours: 4, sixes: 2 }, null, null), 48);
+    check("MVP: 50 milestone", E.mvpPoints({ runs: 50, balls: 30, fours: 0, sixes: 0 }, null, null), 60);
+    check("MVP: 2 wickets, econ 4", E.mvpPoints(null, { balls: 12, runs: 8, wickets: 2, maidens: 0 }, null), 55);
+    check("MVP: catch + run out", E.mvpPoints(null, null, { catches: 1, runOuts: 1, stumpings: 0 }), 18);
+
+    S.clearAll();
+    check("cleared", S.teams().length, 0);
+  } catch (err) {
+    failures++;
+    lines.push("ERROR " + (err && err.stack ? err.stack : err));
+  }
+
+  lines.push("");
+  lines.push(failures === 0 ? "ALL CHECKS PASSED" : failures + " CHECK(S) FAILED");
+  document.getElementById("out").textContent = lines.join("\n");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>DKPL seed</title></head>
+<body>
+<pre id="out">seeding…</pre>
+<script src="../js/config.js"></script>
+<script src="../js/engine.js"></script>
+<script src="../js/api.js"></script>
+<script src="../js/store.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/scoreboard.js"></script>
+<script>
+(function () {
+  const S = DKPL.store;
+  const E = DKPL.engine;
+  let seedValue = 7;
+  function rnd(max) {
+    seedValue = (seedValue * 1103515245 + 12345) % 2147483648;
+    return Math.floor(seedValue / 65536) % max;
+  }
+  const OUTCOMES = [0, 1, 1, 2, 0, 4, 1, 0, 6, 2, 1, 0, 4, 1, "W", 0, 1, 3, "WD", 1, 6, 0, 2, "NB"];
+
+  S.seedSample();
+  const teams = S.teams();
+
+  function playInnings(match, inn, stopAfterBalls) {
+    const batting = S.squad(inn.battingTeamId);
+    const bowling = S.squad(inn.bowlingTeamId);
+    inn.openers = { strikerId: batting[0].id, nonStrikerId: batting[1].id };
+    let next = 2;
+    let guard = 0;
+
+    while (guard++ < 200) {
+      let state = E.computeInnings(inn, match.overs, S.maxWickets(inn.battingTeamId));
+      if (state.complete) break;
+      if (stopAfterBalls && state.balls >= stopAfterBalls) break;
+      if (state.needsBowler) {
+        const over = Math.floor(state.balls / 6);
+        let pick = bowling[(over * 3 + 1) % bowling.length];
+        if (pick.id === state.previousBowlerId) pick = bowling[(over * 3 + 2) % bowling.length];
+        inn.overBowlers.push(pick.id);
+        continue;
+      }
+      const outcome = OUTCOMES[rnd(OUTCOMES.length)];
+      if (outcome === "W") {
+        const newBatsman = next < batting.length ? batting[next++].id : "";
+        inn.deliveries.push({
+          runs: 0,
+          extra: null,
+          wicket: { type: rnd(2) ? "Bowled" : "Caught", outBatsmanId: state.strikerId, fielderId: bowling[rnd(bowling.length)].id, newBatsmanId: newBatsman }
+        });
+      } else if (outcome === "WD" || outcome === "NB") {
+        inn.deliveries.push({ runs: 0, extra: outcome, wicket: null });
+      } else {
+        inn.deliveries.push({ runs: outcome, extra: null, wicket: null });
+      }
+    }
+  }
+
+  function playMatch(teamA, teamB, overs, stopAfterBalls) {
+    let match = S.saveMatch({
+      stage: "League",
+      teamA: teamA.id,
+      teamB: teamB.id,
+      overs: overs,
+      venue: "Doddakittadahalli Ground",
+      date: "Today",
+      toss: { winnerId: teamA.id, decision: "bat" },
+      status: "Live",
+      innings: [E.newInnings(teamA.id, teamB.id, null)],
+      result: null
+    });
+
+    playInnings(match, match.innings[0]);
+    const first = E.computeInnings(match.innings[0], overs, S.maxWickets(teamA.id));
+    match.innings.push(E.newInnings(teamB.id, teamA.id, first.runs + 1));
+    playInnings(match, match.innings[1], stopAfterBalls);
+
+    if (!stopAfterBalls) {
+      match.result = E.resultText(match, S.teamName, overs, S.maxWickets(teamB.id));
+      match.playerOfMatch = E.matchMvp(match, overs, 10)[0].playerId;
+      match.status = "Completed";
+    }
+    S.saveMatch(match);
+    return match;
+  }
+
+  const done1 = playMatch(teams[4], teams[2], 8, 0);
+  const done2 = playMatch(teams[1], teams[3], 8, 0);
+  const done3 = playMatch(teams[0], teams[5], 8, 0);
+  const live = playMatch(teams[0], teams[1], 8, 32);
+
+  const s = S.inningsState(live, 1);
+  document.getElementById("out").textContent =
+    [done1, done2, done3].map(function (m) { return m.result.text; }).join("\n") +
+    "\nLIVE: " + S.teamName(live.innings[1].battingTeamId) + " " + s.runs + "/" + s.wickets +
+    " (" + s.oversText + ") " + DKPL.board.situation(live) +
+    "\nteams " + S.teams().length + " players " + S.players().length + " matches " + S.matches().length;
+})();
+</script>
+</body>
+</html>

@@ -1,2 +1,1 @@
-MatchID,Stage,TeamA,TeamB,Overs,Venue,Date,TossWinner,Decision,Status,Winner
-M001,League,Titans,Warriors,10,DKPL Ground,,,Upcoming,
+MatchID,Stage,TeamA,TeamB,Overs,Venue,Date,TossWinner,Decision,Status,Winner,Result,PlayerOfMatch,InningsJSON

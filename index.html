@@ -3,49 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DKPL 2026</title>
+  <title>DKPL 2026 | Doddakittadahalli Premier League</title>
+  <meta name="description" content="Live scores, fixtures, points table, player statistics and MVP rankings for the Doddakittadahalli Premier League 2026.">
+  <meta name="theme-color" content="#07150f">
+  <link rel="icon" href="images/dkpl-logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="brand" href="index.html">
-        <img src="images/dkpl-logo.svg" alt="DKPL 2026 logo">
-        <span>
-          <strong>DKPL 2026</strong>
-          <small>Doddakittadahalli Premier League</small>
-        </span>
-      </a>
-      <button class="nav-toggle" type="button" aria-label="Open menu">Menu</button>
-      <nav class="site-nav">
-        <a class="active" href="index.html">Home</a>
-        <a href="pages/live.html">Live</a>
-        <a href="pages/fixtures.html">Fixtures</a>
-        <a href="pages/points.html">Points</a>
-        <a href="pages/teams.html">Teams</a>
-        <a href="pages/players.html">Players</a>
-        <a href="pages/stats.html">Stats</a>
-        <a href="pages/admin.html">Admin</a>
-      </nav>
-    </div>
-  </header>
+  <div id="siteHeader"></div>
 
   <main>
     <section class="hero">
       <div class="wrap">
         <div class="hero-card">
-          <p class="kicker">Season 2026</p>
-          <h1>Doddakittadahalli Premier League</h1>
-          <p>Live scores, fixtures, points, player stats, and MVP rankings for DKPL 2026. Six teams. Round robin. Top four to the knockouts.</p>
-          <div class="meta-row">
-            <span class="chip">6 teams</span>
-            <span class="chip">15 league matches</span>
-            <span class="chip">Top 4 qualify</span>
-            <span class="chip">SF + Final</span>
+          <div class="hero-text">
+            <p class="kicker">Season 2026</p>
+            <h1>Doddakittadahalli<br>Premier League</h1>
+            <p>Six teams. Fifteen league matches. Top four to the knockouts. Follow every ball, every stat and the MVP race.</p>
+            <div class="meta-row">
+              <span class="chip">6 teams</span>
+              <span class="chip">15 league matches</span>
+              <span class="chip">Top 4 qualify</span>
+              <span class="chip">6 / 8 / 10 overs</span>
+            </div>
+            <div class="row-actions">
+              <a class="btn btn-primary" href="pages/live.html">Live score</a>
+              <a class="btn btn-ghost" href="pages/points.html">Points table</a>
+            </div>
           </div>
+          <img class="hero-logo" src="images/dkpl-logo.svg" alt="DKPL 2026 logo">
         </div>
       </div>
     </section>
@@ -54,9 +43,9 @@
       <div class="wrap">
         <div class="section-head">
           <h2>Live match</h2>
-          <a href="pages/live.html">Open scoreboard</a>
+          <a href="pages/live.html">Full scoreboard</a>
         </div>
-        <article class="card live-card" id="liveMatch"></article>
+        <div id="liveSlot"></div>
       </div>
     </section>
 
@@ -66,18 +55,44 @@
           <h2>Upcoming matches</h2>
           <a href="pages/fixtures.html">All fixtures</a>
         </div>
-        <div class="grid grid-3" id="upcomingMatches"></div>
+        <div class="grid grid-3" id="upcomingSlot"></div>
       </div>
     </section>
 
     <section class="section">
-      <div class="wrap grid" style="grid-template-columns: 1fr;">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Latest result</h2>
+          <a href="pages/fixtures.html">All results</a>
+        </div>
+        <div id="resultSlot"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Tournament at a glance</h2>
+        </div>
+        <div class="stat-grid" id="statsSlot"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap two-col">
         <div>
           <div class="section-head">
-            <h2>Latest result</h2>
-            <a href="pages/fixtures.html">Results</a>
+            <h2>Points table</h2>
+            <a href="pages/points.html">Full table</a>
           </div>
-          <article class="card" id="latestResult"></article>
+          <div id="tableSlot"></div>
+        </div>
+        <div>
+          <div class="section-head">
+            <h2>MVP race</h2>
+            <a href="pages/stats.html">All statistics</a>
+          </div>
+          <div id="mvpSlot"></div>
         </div>
       </div>
     </section>
@@ -85,41 +100,31 @@
     <section class="section">
       <div class="wrap">
         <div class="section-head">
-          <h2>Tournament statistics</h2>
-          <a href="pages/stats.html">Full stats</a>
-        </div>
-        <div class="stat-grid" id="tournamentStats"></div>
-        <p class="notice" id="dataNotice" hidden>Showing sample preview data until the Google Sheets API URL is added in js/config.js.</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="wrap">
-        <div class="section-head">
-          <h2>Explore DKPL</h2>
+          <h2>Explore</h2>
         </div>
         <div class="menu">
-          <a class="menu-card" href="pages/live.html">Live Score<span>Realtime scoreboard, batters, bowler, and required rate</span></a>
-          <a class="menu-card" href="pages/fixtures.html">Fixtures<span>League schedule, completed matches, and knockouts</span></a>
-          <a class="menu-card" href="pages/points.html">Points Table<span>Played, won, lost, points, and net run rate</span></a>
-          <a class="menu-card" href="pages/teams.html">Teams<span>Logos, captains, and squads</span></a>
-          <a class="menu-card" href="pages/players.html">Players<span>Photos, roles, and statistics</span></a>
-          <a class="menu-card" href="pages/stats.html">Statistics<span>Most runs, wickets, and MVP ranking</span></a>
-          <a class="menu-card admin-card" href="pages/admin.html">Admin<span>Teams, players, fixtures, toss, and scoring</span></a>
-          <a class="menu-card" href="pages/scorer.html">Scorer<span>Ball-by-ball scoring console</span></a>
+          <a class="menu-card" href="pages/live.html">Live Score<span>Ball by ball, batters, bowler and required rate</span></a>
+          <a class="menu-card" href="pages/fixtures.html">Fixtures<span>League schedule, results and knockouts</span></a>
+          <a class="menu-card" href="pages/points.html">Points Table<span>Played, won, lost, points and net run rate</span></a>
+          <a class="menu-card" href="pages/teams.html">Teams<span>Logos, captains and full squads</span></a>
+          <a class="menu-card" href="pages/players.html">Players<span>Photos, roles and season numbers</span></a>
+          <a class="menu-card" href="pages/stats.html">Statistics<span>Runs, wickets and MVP ranking</span></a>
+          <a class="menu-card admin-card" href="pages/admin.html">Admin<span>Teams, players, fixtures and scoring</span></a>
+          <a class="menu-card" href="pages/scorer.html">Scorer<span>Run the match, ball by ball</span></a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <p>DKPL 2026 · Round robin league · Semi Final 1: Rank 1 vs Rank 4 · Semi Final 2: Rank 2 vs Rank 3 · Final: winners</p>
-    </div>
-  </footer>
+  <div id="siteFooter"></div>
 
   <script src="js/config.js"></script>
+  <script src="js/engine.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/scoreboard.js"></script>
+  <script src="js/pages.js"></script>
   <script src="js/home.js"></script>
 </body>
 </html>
