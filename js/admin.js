@@ -269,7 +269,7 @@
     const rulesText = s.rules.join("\n");
     return (
       '<section class="card"><h2>Playoffs &amp; qualification text</h2>' +
-      '<p class="muted">Shown on the home page and fixtures. IPL-style bracket after all league matches. Edit anytime — syncs to Google Sheets (Settings tab).</p>' +
+      '<p class="muted">Shown on the home page and fixtures. Playoff bracket after all league matches. Edit anytime — syncs to Google Sheets (Settings tab).</p>' +
       '<form id="playoffsForm"><div class="field field-wide">' +
       "<label for=\"playoffIntro\">Introduction</label>" +
       '<textarea id="playoffIntro" rows="4">' + U.esc(s.intro) + "</textarea></div>" +

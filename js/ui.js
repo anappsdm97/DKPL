@@ -76,7 +76,7 @@
     return (
       '<footer class="site-footer"><div class="wrap footer-inner">' +
       "<div><strong>" + esc(cfg.fullName) + "</strong>" +
-      "<p>6 teams · 15 league matches · top 4 → IPL playoffs</p></div>" +
+      "<p>6 teams · 15 league matches · top 4 → playoffs</p></div>" +
       "<div><p>" +
       cfg.playoffs.bracket
         .map(function (k) {

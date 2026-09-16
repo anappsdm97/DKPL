@@ -1,4 +1,4 @@
-/** Playoffs / qualification copy and bracket (IPL-style after league). */
+/** Playoffs / qualification copy and bracket (top-four format after league). */
 (function () {
   const DKPL = (window.DKPL = window.DKPL || {});
   const cfg = window.DKPL_CONFIG;

@@ -681,7 +681,7 @@ table.mini td {
   background: rgba(212, 175, 55, 0.08);
 }
 
-/* ----- mobile bracket (IPL paths, not a false linear chain) */
+/* ----- mobile bracket (parallel Q1/Elim paths, not a false linear chain) */
 
 .playoff-round + .playoff-round {
   margin-top: 18px;

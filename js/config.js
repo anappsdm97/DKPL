@@ -12,7 +12,7 @@ window.DKPL_CONFIG = {
   adminPin: "1926",
 
   /**
-   * After all league matches, top 4 enter IPL-style playoffs (not 1v4 / 2v3 semis).
+   * After all league matches, top 4 enter Q1 / Eliminator / Q2 / Final playoffs (not 1v4 / 2v3 semis).
    */
   playoffs: {
     stages: ["Qualifier 1", "Eliminator", "Qualifier 2", "Final"],
@@ -40,7 +40,7 @@ window.DKPL_CONFIG = {
     ],
     defaultIntro:
       "All 15 league matches are round-robin. They decide the top four on the points table only. " +
-      "After the league, playoffs follow the IPL format — win and you advance.",
+      "After the league, playoffs use the Qualifier / Eliminator format — win and you advance.",
     defaultRules: [
       "Whoever wins more league matches earns more points and climbs the table (NRR breaks ties). Top 4 qualify for playoffs.",
       "League fixtures are separate from the playoff bracket — league results only set seeds (1st–4th).",

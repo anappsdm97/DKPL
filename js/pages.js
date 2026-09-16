@@ -239,7 +239,7 @@
             })
             .join("") +
           "</tbody></table>" +
-          '<p class="notice">Top ' + cfg.qualify + " teams enter IPL-style playoffs after the league. NRR breaks ties.</p></div>"
+          '<p class="notice">Top ' + cfg.qualify + " teams enter the playoffs after the league. NRR breaks ties.</p></div>"
         : U.empty("No teams yet.", "admin.html", "Add teams");
     },
 
