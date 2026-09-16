@@ -39,5 +39,5 @@ window.DKPL_CONFIG = {
   },
 
   // Google Sheet: DKPL-2026 (script must be opened via Extensions → Apps Script on that file).
-  apiBase: "https://script.google.com/macros/s/AKfycbyQW9O9WMyTECa-HNMGkolWjy4qzu40m4yII7Lrez-d-ZT9tEnzL26qRWUSez7JpHig/exec"
+  apiBase: "https://script.google.com/macros/s/AKfycbw9GOiu3nsynqghQ0H8QIwyo5_AdYMi5m0EJ9Lo1DPSTIZtT0TUUUxKPmb2Za5aCwmf/exec"
 };

@@ -212,7 +212,13 @@
       (synced
         ? "Connected to Google Sheets. Every change is saved to your sheet."
         : "Saving in this browser only. Paste your Apps Script web app URL into <code>js/config.js</code> (apiBase) to sync with Google Sheets and share across devices.") +
-      "</p></section>" +
+      "</p>" +
+      (synced
+        ? '<div class="row-actions"><button class="btn btn-primary" type="button" id="testCloud">Test Google Sheet</button>' +
+          '<button class="btn btn-ghost" type="button" id="pushCloud">Sync everything now</button></div>' +
+          '<p class="notice" id="cloudStatus">After scoring, use <strong>Sync everything now</strong> so phones see live updates.</p>'
+        : "") +
+      "</section>" +
       '<section class="card"><h2>Tools</h2><div class="row-actions">' +
       '<button class="btn btn-ghost" type="button" id="seed">Load sample tournament</button>' +
       '<button class="btn btn-ghost" type="button" id="exportData">Export JSON backup</button>' +
@@ -344,6 +350,41 @@
           U.toast("All data cleared");
           render();
         }
+        return;
+      }
+
+      if (target.id === "testCloud") {
+        const status = document.getElementById("cloudStatus");
+        if (status) status.textContent = "Testing…";
+        DKPL.api
+          .testConnection()
+          .then(function (r) {
+            if (status) {
+              status.textContent =
+                "Sheet OK: " + r.teams + " teams, " + r.players + " players, " + r.matches + " matches.";
+            }
+            U.toast("Google Sheet connected");
+          })
+          .catch(function (err) {
+            if (status) status.textContent = "Sheet error: " + err.message;
+            U.toast("Sheet connection failed");
+          });
+        return;
+      }
+
+      if (target.id === "pushCloud") {
+        const status = document.getElementById("cloudStatus");
+        if (status) status.textContent = "Uploading…";
+        DKPL.api
+          .pushAll(S)
+          .then(function () {
+            if (status) status.textContent = "Uploaded. Phones should update within a few seconds.";
+            U.toast("Synced to Google Sheet");
+          })
+          .catch(function (err) {
+            if (status) status.textContent = "Upload failed: " + err.message;
+            U.toast("Sync failed");
+          });
         return;
       }
 

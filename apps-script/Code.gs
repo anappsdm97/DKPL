@@ -1,12 +1,24 @@
 /**
  * DKPL 2026 backend.
  *
- * Deploy: Extensions > Apps Script > paste this file > Deploy > New deployment >
- * Web app > Execute as "Me" > Access "Anyone" > copy the URL into js/config.js (apiBase).
+ * SETUP (must all be true or the site cannot sync):
+ * 1. Open spreadsheet DKPL-2026 → Extensions → Apps Script (bound project, not script.google.com alone).
+ * 2. Paste this entire file into Code.gs → Save.
+ * 3. In the toolbar dropdown (NOT "json"), choose initDKPL → Run ▶ → allow access.
+ *    DKPL-2026 must show tabs Teams, Players, Matches, BallByBall (not only Sheet1).
+ * 4. Deploy → New deployment → Type: Web app (NOT Library) → Execute as Me → Anyone → Deploy.
+ * 5. Copy the URL ending in /exec into js/config.js (apiBase). Ignore library URLs (/library/d/...).
+ * 6. Test: open YOUR_URL?action=ping — must show JSON, not "doGet not found".
  *
  * Sheets used: Teams, Players, Matches, BallByBall.
  * BallByBall is written for analysis; the app reads Matches.
  */
+
+/**
+ * If the project title is "Untitled project" and initDKPL does nothing, paste the
+ * spreadsheet ID from the DKPL-2026 URL: .../spreadsheets/d/PASTE_THIS_PART/edit
+ */
+var DKPL_SPREADSHEET_ID = "";
 
 var SHEETS = {
   teams: { name: "Teams", headers: ["TeamID", "TeamName", "Short", "Captain", "Colour", "LogoURL"] },
@@ -31,9 +43,23 @@ function json(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }
 
+function getSpreadsheet() {
+  if (DKPL_SPREADSHEET_ID) {
+    return SpreadsheetApp.openById(DKPL_SPREADSHEET_ID);
+  }
+  var ss = SpreadsheetApp.getActive();
+  if (!ss) {
+    throw new Error(
+      "No spreadsheet linked. Open DKPL-2026 → Extensions → Apps Script, " +
+        "or set DKPL_SPREADSHEET_ID at the top of Code.gs."
+    );
+  }
+  return ss;
+}
+
 function sheetFor(key) {
   var spec = SHEETS[key];
-  var ss = SpreadsheetApp.getActive();
+  var ss = getSpreadsheet();
   var sheet = ss.getSheetByName(spec.name);
   if (!sheet) {
     sheet = ss.insertSheet(spec.name);
@@ -66,7 +92,7 @@ function writeRows(key, rows) {
   sheet.clear();
   sheet.appendRow(spec.headers);
   if (rows.length) {
-    sheet.getRange(2, 1, rows.length, spec.headers.length).setValues(rows);
+    sheet.getRange(2, 1, 1 + rows.length, spec.headers.length).setValues(rows);
   }
 }
 
@@ -185,10 +211,32 @@ function rebuildBallByBall(matches) {
   writeRows("ballbyball", rows);
 }
 
+/**
+ * Run once from the editor: select initDKPL in the dropdown (not json) → Run ▶.
+ */
+function initDKPL() {
+  var ss = getSpreadsheet();
+  sheetFor("teams");
+  sheetFor("players");
+  sheetFor("matches");
+  sheetFor("ballbyball");
+  var msg = "Created DKPL tabs in spreadsheet: " + ss.getName();
+  Logger.log(msg);
+  try {
+    SpreadsheetApp.getUi().alert(msg);
+  } catch (err) {
+    // Web app context has no UI; editor run shows the alert.
+  }
+}
+
 /* ------------------------------------------------------------ handlers */
 
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || "all";
+
+  if (action === "ping") {
+    return json({ ok: true, service: "DKPL 2026", sheet: getSpreadsheet().getName() });
+  }
 
   if (action === "all") {
     return json({
@@ -205,7 +253,8 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  var payload = JSON.parse(e.postData.contents || "{}");
+  var raw = (e.postData && e.postData.contents) || e.parameter.payload || "{}";
+  var payload = JSON.parse(raw);
   if (payload.action !== "save") return json({ error: "Unknown action" });
 
   var lock = LockService.getScriptLock();

@@ -401,6 +401,7 @@
         merge(KEYS.teams, remote.teams);
         merge(KEYS.players, remote.players);
         merge(KEYS.matches, remote.matches);
+        window.dispatchEvent(new CustomEvent("dkpl-data-changed", { detail: { key: "pull" } }));
         return true;
       } catch (err) {
         console.warn("DKPL remote load failed, using local data", err);

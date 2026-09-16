@@ -23,6 +23,21 @@
     return '<article class="card fixture-card">' + body + title + "</article>";
   }
 
+  function syncBanner() {
+    if (!DKPL.api.enabled()) {
+      return (
+        '<p class="notice sync-banner">' +
+        "This device only shows data saved in this browser. Push the site with Google Sheets configured so phones can follow live scores." +
+        "</p>"
+      );
+    }
+    return (
+      '<p class="notice sync-banner">' +
+      "Live scores refresh every few seconds from the shared Google Sheet (same data for all phones)." +
+      "</p>"
+    );
+  }
+
   /** Same-tab scoring + cross-tab admin + periodic Sheets pull for spectators. */
   function attachLiveRefresh(draw) {
     async function refresh() {
@@ -37,6 +52,7 @@
   const pages = {
     home: function () {
       function renderHome() {
+      let banner = syncBanner();
       const live = S.liveMatch();
       const upcoming = S.upcomingMatches().slice(0, 3);
       const completed = S.completedMatches();
@@ -53,14 +69,16 @@
         el("upcomingSlot").innerHTML = "";
         el("resultSlot").innerHTML = "";
       } else {
-        el("liveSlot").innerHTML = live
+        el("liveSlot").innerHTML =
+          banner +
+          (live
           ? '<article class="card live-card">' + DKPL.board.miniHtml(live) + DKPL.board.currentPlayers(live) +
             '<a class="btn btn-primary" href="pages/live.html">Open full scoreboard</a></article>'
           : U.empty(
               "No live match yet. Create a fixture in Admin, open Scorer, complete setup and tap Start match.",
               "pages/scorer.html",
               "Open scorer"
-            );
+            ));
 
         el("upcomingSlot").innerHTML = upcoming.length
           ? upcoming.map(matchCard).join("")
@@ -277,16 +295,21 @@
 
     live: function () {
       function draw() {
+        const banner = syncBanner();
         const live = S.liveMatch();
         if (live) {
-          el("app").innerHTML = DKPL.board.fullHtml(live);
+          el("app").innerHTML = banner + DKPL.board.fullHtml(live);
           return;
         }
         const completed = S.completedMatches();
         const latest = completed[completed.length - 1];
         el("app").innerHTML = latest
-          ? '<p class="muted">No live match. Showing the most recent result.</p>' + DKPL.board.fullHtml(latest)
-          : U.empty("No match is being scored right now.", "fixtures.html", "See fixtures");
+          ? banner + '<p class="muted">No live match. Showing the most recent result.</p>' + DKPL.board.fullHtml(latest)
+          : banner + U.empty(
+              "No match on this phone yet. If someone is scoring on another device, wait a few seconds or ask them to sync from Admin → Data.",
+              "fixtures.html",
+              "See fixtures"
+            );
       }
 
       draw();
