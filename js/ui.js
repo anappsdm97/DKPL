@@ -176,45 +176,116 @@
     );
   }
 
-  /**
-   * Simple PIN gate for the admin screens. GitHub Pages is public, so this is a
-   * convenience lock, not real authentication.
-   */
-  function requireAdmin(container, onUnlock) {
-    if (sessionStorage.getItem("dkpl.admin") === "yes") {
+  function isAdminSession() {
+    return DKPL.api && DKPL.api.getRole() === "admin";
+  }
+
+  function isScorerSession() {
+    const role = DKPL.api && DKPL.api.getRole();
+    return role === "admin" || role === "scorer";
+  }
+
+  function pinGate(container, opts, onUnlock) {
+    if (opts.alreadyUnlocked()) {
       onUnlock();
       return;
     }
     container.innerHTML =
       '<form class="card lock-card" id="pinForm">' +
-      "<h2>Admin access</h2>" +
-      '<p class="muted">Enter the admin PIN to manage teams, players, fixtures and scoring.</p>' +
-      '<div class="field"><label for="pin">Admin PIN</label>' +
+      "<h2>" + esc(opts.title) + "</h2>" +
+      '<p class="muted">' + esc(opts.hint) + "</p>" +
+      '<div class="field"><label for="pin">' + esc(opts.label) + "</label>" +
       '<input id="pin" type="password" inputmode="numeric" autocomplete="off" required></div>' +
-      '<button class="btn btn-primary" type="submit">Unlock</button>' +
+      '<button class="btn btn-primary" type="submit" id="pinSubmit">Unlock</button>' +
       '<p class="notice" id="pinError" hidden>Incorrect PIN.</p>' +
       "</form>";
 
     document.getElementById("pinForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const value = document.getElementById("pin").value.trim();
-      if (value === String(cfg.adminPin)) {
-        sessionStorage.setItem("dkpl.admin", "yes");
-        onUnlock();
-      } else {
-        document.getElementById("pinError").hidden = false;
+      const errEl = document.getElementById("pinError");
+      const submitBtn = document.getElementById("pinSubmit");
+      errEl.hidden = true;
+      errEl.textContent = "Incorrect PIN.";
+
+      if (!DKPL.api || !DKPL.api.enabled()) {
+        errEl.textContent = "PIN login needs the Google Sheets backend (apiBase in config).";
+        errEl.hidden = false;
+        return;
       }
+
+      submitBtn.disabled = true;
+      DKPL.api
+        .auth(opts.mode, value)
+        .then(function (result) {
+          if (result && result.ok && result.token) {
+            DKPL.api.setSession(result.token, result.role);
+            onUnlock();
+            return;
+          }
+          errEl.hidden = false;
+        })
+        .catch(function () {
+          errEl.textContent = "Could not verify PIN. Redeploy Apps Script after adding Script properties.";
+          errEl.hidden = false;
+        })
+        .finally(function () {
+          submitBtn.disabled = false;
+        });
     });
   }
 
-  function signOut() {
-    sessionStorage.removeItem("dkpl.admin");
+  /** PINs live in Apps Script Script properties; writes require a server token. */
+  function requireAdmin(container, onUnlock) {
+    pinGate(
+      container,
+      {
+        mode: "admin",
+        title: "Admin access",
+        hint: "Enter the admin PIN to manage teams, players, fixtures, playoffs and data.",
+        label: "Admin PIN",
+        alreadyUnlocked: isAdminSession
+      },
+      onUnlock
+    );
+  }
+
+  function requireScorer(container, onUnlock) {
+    pinGate(
+      container,
+      {
+        mode: "scorer",
+        title: "Scorer access",
+        hint: "Enter the scorer PIN to update live scores and publish results. Admin PIN also works here.",
+        label: "Scorer PIN",
+        alreadyUnlocked: isScorerSession
+      },
+      onUnlock
+    );
+  }
+
+  function signOutAdmin() {
+    if (DKPL.api) DKPL.api.clearSession();
     location.reload();
   }
 
+  function signOutScorer() {
+    if (DKPL.api) DKPL.api.clearSession();
+    location.reload();
+  }
+
+  function signOut() {
+    signOutAdmin();
+  }
+
   DKPL.ui = {
+    isAdminSession: isAdminSession,
+    isScorerSession: isScorerSession,
     requireAdmin: requireAdmin,
+    requireScorer: requireScorer,
     signOut: signOut,
+    signOutAdmin: signOutAdmin,
+    signOutScorer: signOutScorer,
     base: base,
     esc: esc,
     imageUrl: imageUrl,

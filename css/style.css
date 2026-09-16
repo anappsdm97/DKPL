@@ -236,10 +236,20 @@ h1, h2, h3, h4 {
 
 .page-title {
   padding: 26px 0 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .page-title h1 {
   font-size: clamp(1.6rem, 5vw, 2.4rem);
+}
+
+.page-title-actions {
+  flex-shrink: 0;
+  padding-top: 4px;
 }
 
 .grid {

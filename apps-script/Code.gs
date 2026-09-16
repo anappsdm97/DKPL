@@ -9,6 +9,8 @@
  * 4. Deploy → New deployment → Type: Web app (NOT Library) → Execute as Me → Anyone → Deploy.
  * 5. Copy the URL ending in /exec into js/config.js (apiBase). Ignore library URLs (/library/d/...).
  * 6. Test: open YOUR_URL?action=ping — must show JSON, not "doGet not found".
+ * 7. Project settings → Script properties: ADMIN_PIN, SCORER_PIN (never commit PINs to GitHub).
+ *    Redeploy web app after Code.gs changes.
  *
  * Sheets used: Teams, Players, Matches, BallByBall, Settings.
  * BallByBall is written for analysis; the app reads Matches.
@@ -250,6 +252,54 @@ function initDKPL() {
   }
 }
 
+/* ----------------------------------------------------------- PIN / auth */
+
+var AUTH_CACHE_PREFIX = "dkpl_tok:";
+var AUTH_TTL_SEC = 21600; // 6 hours
+
+function scriptPin(key) {
+  var v = PropertiesService.getScriptProperties().getProperty(key);
+  return v ? String(v).trim() : "";
+}
+
+function authRoleForPin(pin, mode) {
+  var adminPin = scriptPin("ADMIN_PIN");
+  var scorerPin = scriptPin("SCORER_PIN");
+  if (!adminPin && !scorerPin) {
+    throw new Error("Set ADMIN_PIN and SCORER_PIN in Apps Script → Project settings → Script properties.");
+  }
+  if (adminPin && pin === adminPin) return "admin";
+  if (mode === "scorer" && scorerPin && pin === scorerPin) return "scorer";
+  return null;
+}
+
+function issueAuthToken(role) {
+  var token = Utilities.getUuid().replace(/-/g, "") + Utilities.getUuid().replace(/-/g, "");
+  CacheService.getScriptCache().put(AUTH_CACHE_PREFIX + token, role, AUTH_TTL_SEC);
+  return token;
+}
+
+function roleForToken(token) {
+  if (!token) return null;
+  return CacheService.getScriptCache().get(AUTH_CACHE_PREFIX + String(token).trim());
+}
+
+function handleAuth(payload) {
+  var pin = String(payload.pin || "").trim();
+  var mode = String(payload.mode || "scorer").trim();
+  if (!pin) return { ok: false, error: "Missing PIN" };
+  var role = authRoleForPin(pin, mode);
+  if (!role) return { ok: false, error: "Invalid PIN" };
+  if (mode === "admin" && role !== "admin") return { ok: false, error: "Invalid PIN" };
+  return { ok: true, role: role, token: issueAuthToken(role) };
+}
+
+function entityAllowedForRole(role, entity) {
+  if (role === "admin") return true;
+  if (role === "scorer") return entity === "matches";
+  return false;
+}
+
 /* ------------------------------------------------------------ handlers */
 
 function doGet(e) {
@@ -277,17 +327,34 @@ function doGet(e) {
 function doPost(e) {
   var raw = (e.postData && e.postData.contents) || e.parameter.payload || "{}";
   var payload = JSON.parse(raw);
+
+  if (payload.action === "auth") {
+    try {
+      return json(handleAuth(payload));
+    } catch (err) {
+      return json({ ok: false, error: String(err.message || err) });
+    }
+  }
+
   if (payload.action !== "save") return json({ error: "Unknown action" });
+
+  var role = roleForToken(payload.token);
+  if (!role) return json({ ok: false, error: "Unauthorized" });
+
+  var entity = payload.entity;
+  if (!entityAllowedForRole(role, entity)) {
+    return json({ ok: false, error: "Forbidden" });
+  }
 
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    if (payload.entity === "teams") writeRows("teams", (payload.rows || []).map(teamToRow));
-    else if (payload.entity === "players") writeRows("players", (payload.rows || []).map(playerToRow));
-    else if (payload.entity === "matches") {
+    if (entity === "teams") writeRows("teams", (payload.rows || []).map(teamToRow));
+    else if (entity === "players") writeRows("players", (payload.rows || []).map(playerToRow));
+    else if (entity === "matches") {
       writeRows("matches", (payload.rows || []).map(matchToRow));
       rebuildBallByBall(payload.rows || []);
-    } else if (payload.entity === "settings") {
+    } else if (entity === "settings") {
       writeSettingsObject(payload.data || {});
     } else {
       return json({ error: "Unknown entity" });

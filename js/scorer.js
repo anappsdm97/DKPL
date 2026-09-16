@@ -255,7 +255,7 @@
       (state.complete ? breakPanel(m, state) : keypad()) +
       '<div class="row-actions scorer-links">' +
       '<a class="btn btn-ghost" href="live.html">Public view</a>' +
-      '<a class="btn btn-ghost" href="admin.html">Admin</a>' +
+      (U.isAdminSession() ? '<a class="btn btn-ghost" href="admin.html">Admin</a>' : "") +
       '<button class="btn btn-ghost" type="button" id="endInnings">End innings ' + inningsNo + "</button>" +
       "</div>";
 
@@ -498,9 +498,23 @@
     render();
   }
 
+  function mountScorerChrome() {
+    const title = document.querySelector(".page-title");
+    if (!title || document.getElementById("scorerLock")) return;
+    const actions = document.createElement("div");
+    actions.className = "page-title-actions";
+    actions.innerHTML =
+      '<button class="btn btn-ghost" type="button" id="scorerLock">Lock scorer</button>';
+    title.appendChild(actions);
+    document.getElementById("scorerLock").addEventListener("click", U.signOutScorer);
+  }
+
   document.addEventListener("DOMContentLoaded", async function () {
-    U.mount("admin");
+    U.mount("");
     await S.ready();
-    U.requireAdmin(app(), render);
+    U.requireScorer(app(), function () {
+      mountScorerChrome();
+      render();
+    });
   });
 })();

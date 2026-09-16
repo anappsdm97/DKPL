@@ -1,10 +1,14 @@
 /**
  * Google Apps Script web app client.
  * POST uses text/plain so the browser does not send a CORS preflight (required for GAS).
+ * PINs are verified on the server (Script properties), not stored in this repo.
  */
 (function () {
   const DKPL = (window.DKPL = window.DKPL || {});
   const cfg = window.DKPL_CONFIG;
+
+  const TOKEN_KEY = "dkpl.authToken";
+  const ROLE_KEY = "dkpl.authRole";
 
   function enabled() {
     return Boolean(cfg.apiBase);
@@ -18,6 +22,48 @@
     }
   }
 
+  function getToken() {
+    return sessionStorage.getItem(TOKEN_KEY) || "";
+  }
+
+  function getRole() {
+    return sessionStorage.getItem(ROLE_KEY) || "";
+  }
+
+  function setSession(token, role) {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(ROLE_KEY, role);
+  }
+
+  function clearSession() {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(ROLE_KEY);
+    sessionStorage.removeItem("dkpl.admin");
+    sessionStorage.removeItem("dkpl.scorer");
+  }
+
+  async function post(payload) {
+    if (!enabled()) throw new Error("apiBase is not configured");
+    const res = await fetch(cfg.apiBase, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    const data = parseJson(text);
+    if (data.error === "Unauthorized" || data.error === "Forbidden") {
+      clearSession();
+    }
+    if (!res.ok && !data.error) throw new Error("Request failed: " + res.status);
+    return data;
+  }
+
+  /** mode: "admin" | "scorer" — admin mode accepts admin PIN only; scorer accepts admin or scorer PIN. */
+  async function auth(mode, pin) {
+    return post({ action: "auth", mode: mode, pin: pin });
+  }
+
   async function pull() {
     if (!enabled()) return null;
     const url = cfg.apiBase + (cfg.apiBase.indexOf("?") >= 0 ? "&" : "?") + "action=all";
@@ -29,31 +75,26 @@
 
   async function push(entity, rows) {
     if (!enabled()) return null;
-    const body = JSON.stringify({ action: "save", entity: entity, rows: rows });
-    const res = await fetch(cfg.apiBase, {
-      method: "POST",
-      redirect: "follow",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: body
+    const data = await post({
+      action: "save",
+      entity: entity,
+      rows: rows,
+      token: getToken()
     });
-    const text = await res.text();
-    if (!res.ok) throw new Error("Sheets write failed: " + res.status);
-    return parseJson(text);
+    if (data.error) throw new Error(data.error);
+    return data;
   }
 
-  /** Push teams, players and matches in one go (use after scoring or from Admin). */
   async function pushSettings(data) {
     if (!enabled()) return null;
-    const body = JSON.stringify({ action: "save", entity: "settings", data: data || {} });
-    const res = await fetch(cfg.apiBase, {
-      method: "POST",
-      redirect: "follow",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: body
+    const out = await post({
+      action: "save",
+      entity: "settings",
+      data: data || {},
+      token: getToken()
     });
-    const text = await res.text();
-    if (!res.ok) throw new Error("Settings write failed: " + res.status);
-    return parseJson(text);
+    if (out.error) throw new Error(out.error);
+    return out;
   }
 
   async function pushAll(store) {
@@ -75,6 +116,11 @@
 
   DKPL.api = {
     enabled: enabled,
+    auth: auth,
+    getToken: getToken,
+    getRole: getRole,
+    setSession: setSession,
+    clearSession: clearSession,
     pull: pull,
     push: push,
     pushSettings: pushSettings,

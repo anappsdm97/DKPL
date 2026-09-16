@@ -9,8 +9,6 @@ window.DKPL_CONFIG = {
   oversOptions: [6, 8, 10],
   venueDefault: "Doddakittadahalli Ground",
 
-  adminPin: "1926",
-
   /**
    * After all league matches, top 4 enter Q1 / Eliminator / Q2 / Final playoffs (not 1v4 / 2v3 semis).
    */
