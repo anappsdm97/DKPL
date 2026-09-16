@@ -92,7 +92,8 @@ function writeRows(key, rows) {
   sheet.clear();
   sheet.appendRow(spec.headers);
   if (rows.length) {
-    sheet.getRange(2, 1, 1 + rows.length, spec.headers.length).setValues(rows);
+    // getRange(row, column, numRows, numColumns) — third arg is row COUNT, not last row index.
+    sheet.getRange(2, 1, rows.length, spec.headers.length).setValues(rows);
   }
 }
 

@@ -247,7 +247,16 @@
           logo: document.getElementById("teamLogo").value.trim()
         });
         editingTeam = null;
-        U.toast("Team saved");
+        U.toast("Team saved locally — syncing to sheet…");
+        DKPL.api
+          .pushAll(S)
+          .then(function () {
+            U.toast("Team saved to Google Sheet");
+          })
+          .catch(function (err) {
+            U.toast("Sheet upload failed");
+            console.warn(err);
+          });
         render();
       });
     }

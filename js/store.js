@@ -29,9 +29,19 @@
     // Rapid scoring taps would otherwise fire a request per ball.
     clearTimeout(syncTimers[key]);
     syncTimers[key] = setTimeout(function () {
-      DKPL.api.push(key.split(".")[1], read(key)).catch(function (err) {
-        console.warn("DKPL sync failed", err);
-      });
+      DKPL.api
+        .push(key.split(".")[1], read(key))
+        .then(function () {
+          localStorage.removeItem("dkpl.syncError");
+        })
+        .catch(function (err) {
+          var msg = err && err.message ? err.message : String(err);
+          localStorage.setItem("dkpl.syncError", msg);
+          console.warn("DKPL sync failed", err);
+          if (DKPL.ui && DKPL.ui.toast) {
+            DKPL.ui.toast("Google Sheet sync failed — use Admin → Sync everything now");
+          }
+        });
     }, 1500);
   }
 
