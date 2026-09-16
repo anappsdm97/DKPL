@@ -10,7 +10,7 @@
  * 5. Copy the URL ending in /exec into js/config.js (apiBase). Ignore library URLs (/library/d/...).
  * 6. Test: open YOUR_URL?action=ping — must show JSON, not "doGet not found".
  *
- * Sheets used: Teams, Players, Matches, BallByBall.
+ * Sheets used: Teams, Players, Matches, BallByBall, Settings.
  * BallByBall is written for analysis; the app reads Matches.
  */
 
@@ -36,7 +36,8 @@ var SHEETS = {
       "MatchID", "Innings", "Over", "Ball", "Batsman", "NonStriker", "Bowler",
       "Runs", "ExtraType", "ExtraRuns", "Wicket", "DismissalType", "PlayerOut", "Timestamp"
     ]
-  }
+  },
+  settings: { name: "Settings", headers: ["Key", "Value"] }
 };
 
 function json(data) {
@@ -215,12 +216,31 @@ function rebuildBallByBall(matches) {
 /**
  * Run once from the editor: select initDKPL in the dropdown (not json) → Run ▶.
  */
+function readSettingsObject() {
+  var rows = readRows("settings");
+  for (var i = 0; i < rows.length; i++) {
+    if (String(rows[i].Key) === "dkpl") {
+      try {
+        return JSON.parse(rows[i].Value || "{}");
+      } catch (err) {
+        return {};
+      }
+    }
+  }
+  return {};
+}
+
+function writeSettingsObject(data) {
+  writeRows("settings", [["dkpl", JSON.stringify(data || {})]]);
+}
+
 function initDKPL() {
   var ss = getSpreadsheet();
   sheetFor("teams");
   sheetFor("players");
   sheetFor("matches");
   sheetFor("ballbyball");
+  sheetFor("settings");
   var msg = "Created DKPL tabs in spreadsheet: " + ss.getName();
   Logger.log(msg);
   try {
@@ -243,7 +263,8 @@ function doGet(e) {
     return json({
       teams: readRows("teams").map(rowToTeam),
       players: readRows("players").map(rowToPlayer),
-      matches: readRows("matches").map(rowToMatch)
+      matches: readRows("matches").map(rowToMatch),
+      settings: readSettingsObject()
     });
   }
   if (action === "teams") return json(readRows("teams").map(rowToTeam));
@@ -266,6 +287,8 @@ function doPost(e) {
     else if (payload.entity === "matches") {
       writeRows("matches", (payload.rows || []).map(matchToRow));
       rebuildBallByBall(payload.rows || []);
+    } else if (payload.entity === "settings") {
+      writeSettingsObject(payload.data || {});
     } else {
       return json({ error: "Unknown entity" });
     }

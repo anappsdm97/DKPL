@@ -7,6 +7,7 @@
   const cfg = window.DKPL_CONFIG;
 
   const KEYS = { teams: "dkpl.teams", players: "dkpl.players", matches: "dkpl.matches" };
+  const SETTINGS_KEY = "dkpl.settings";
 
   function read(key) {
     try {
@@ -113,6 +114,26 @@
     },
     deleteMatch: function (id) {
       remove(KEYS.matches, id);
+    },
+
+    /** Remove all ball-by-ball data and put the fixture back to Upcoming. */
+    resetMatch: function (id) {
+      const m = store.matchById(id);
+      if (!m) return null;
+      return store.saveMatch({
+        id: m.id,
+        stage: m.stage,
+        teamA: m.teamA,
+        teamB: m.teamB,
+        overs: m.overs,
+        venue: m.venue,
+        date: m.date,
+        status: "Upcoming",
+        innings: [],
+        result: null,
+        toss: null,
+        playerOfMatch: ""
+      });
     },
 
     teamById: function (id) {
@@ -411,12 +432,40 @@
         merge(KEYS.teams, remote.teams);
         merge(KEYS.players, remote.players);
         merge(KEYS.matches, remote.matches);
+        if (remote.settings && typeof remote.settings === "object" && Object.keys(remote.settings).length) {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(remote.settings));
+        }
         window.dispatchEvent(new CustomEvent("dkpl-data-changed", { detail: { key: "pull" } }));
         return true;
       } catch (err) {
         console.warn("DKPL remote load failed, using local data", err);
         return false;
       }
+    },
+
+    settingsRaw: function () {
+      try {
+        return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      } catch (err) {
+        return {};
+      }
+    },
+
+    settings: function () {
+      if (DKPL.playoffs) return DKPL.playoffs.mergedSettings(store.settingsRaw());
+      return { intro: "", rules: [], adminNote: "" };
+    },
+
+    saveSettings: function (patch) {
+      const next = Object.assign({}, store.settingsRaw(), patch);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("dkpl-data-changed", { detail: { key: "settings" } }));
+      if (DKPL.api && DKPL.api.enabled()) {
+        DKPL.api.pushSettings(next).catch(function (err) {
+          console.warn("Settings sync failed", err);
+        });
+      }
+      return next;
     },
 
     isEmpty: function () {

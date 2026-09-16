@@ -76,9 +76,9 @@
     return (
       '<footer class="site-footer"><div class="wrap footer-inner">' +
       "<div><strong>" + esc(cfg.fullName) + "</strong>" +
-      "<p>6 teams · 15 league matches · top 4 qualify</p></div>" +
+      "<p>6 teams · 15 league matches · top 4 → IPL playoffs</p></div>" +
       "<div><p>" +
-      cfg.knockout
+      cfg.playoffs.bracket
         .map(function (k) {
           return esc(k.stage) + ": " + esc(k.detail);
         })

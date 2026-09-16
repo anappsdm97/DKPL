@@ -9,15 +9,48 @@ window.DKPL_CONFIG = {
   oversOptions: [6, 8, 10],
   venueDefault: "Doddakittadahalli Ground",
 
-  // Local gate for the admin console. GitHub Pages is public, so this only
-  // keeps casual visitors out of the admin screens.
   adminPin: "1926",
 
-  knockout: [
-    { stage: "Semi Final 1", detail: "Rank 1 vs Rank 4" },
-    { stage: "Semi Final 2", detail: "Rank 2 vs Rank 3" },
-    { stage: "Final", detail: "Winner SF1 vs Winner SF2" }
-  ],
+  /**
+   * After all league matches, top 4 enter IPL-style playoffs (not 1v4 / 2v3 semis).
+   */
+  playoffs: {
+    stages: ["Qualifier 1", "Eliminator", "Qualifier 2", "Final"],
+    bracket: [
+      {
+        stage: "Qualifier 1",
+        detail: "Rank 1 vs Rank 2",
+        outcome: "Winner → Final · Loser → Qualifier 2"
+      },
+      {
+        stage: "Eliminator",
+        detail: "Rank 3 vs Rank 4",
+        outcome: "Winner → Qualifier 2 · Loser out"
+      },
+      {
+        stage: "Qualifier 2",
+        detail: "Loser Q1 vs Winner Eliminator",
+        outcome: "Winner → Final"
+      },
+      {
+        stage: "Final",
+        detail: "Winner Q1 vs Winner Q2",
+        outcome: "DKPL champion"
+      }
+    ],
+    defaultIntro:
+      "All 15 league matches are round-robin. They decide the top four on the points table only. " +
+      "After the league, playoffs follow the IPL format — win and you advance.",
+    defaultRules: [
+      "Whoever wins more league matches earns more points and climbs the table (NRR breaks ties). Top 4 qualify for playoffs.",
+      "League fixtures are separate from the playoff bracket — league results only set seeds (1st–4th).",
+      "In every playoff match, the team that wins advances to the next round.",
+      "Qualifier 1 (1st vs 2nd): winner goes straight to the Final; loser plays Qualifier 2.",
+      "Eliminator (3rd vs 4th): winner plays Qualifier 2; loser is eliminated.",
+      "Qualifier 2: loser of Q1 vs winner of Eliminator — winner reaches the Final.",
+      "Final: winner of Q1 vs winner of Q2 — winner is crowned DKPL champion."
+    ]
+  },
 
   mvp: {
     run: 1,
@@ -27,7 +60,6 @@ window.DKPL_CONFIG = {
     hundred: 25,
     wicket: 20,
     maiden: 10,
-    // Economy bonus for bowlers who completed at least one over.
     economy: [
       { max: 4, bonus: 15 },
       { max: 6, bonus: 8 },
@@ -38,6 +70,5 @@ window.DKPL_CONFIG = {
     stumping: 10
   },
 
-  // Google Sheet: DKPL-2026 (script must be opened via Extensions → Apps Script on that file).
   apiBase: "https://script.google.com/macros/s/AKfycbw9GOiu3nsynqghQ0H8QIwyo5_AdYMi5m0EJ9Lo1DPSTIZtT0TUUUxKPmb2Za5aCwmf/exec"
 };

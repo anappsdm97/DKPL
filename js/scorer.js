@@ -135,9 +135,7 @@
       '<div class="field"><label for="stage">Stage</label><select id="stage">' +
       ["League"]
         .concat(
-          cfg.knockout.map(function (k) {
-            return k.stage;
-          })
+          cfg.playoffs.stages
         )
         .map(function (s) {
           return '<option value="' + U.esc(s) + '"' + (s === m.stage ? " selected" : "") + ">" + U.esc(s) + "</option>";

@@ -10,12 +10,22 @@
     { key: "teams", label: "Teams" },
     { key: "players", label: "Players" },
     { key: "fixtures", label: "Fixtures" },
+    { key: "playoffs", label: "Playoffs" },
     { key: "data", label: "Data" }
   ];
 
   let tab = "teams";
   let editingTeam = null;
   let editingPlayer = null;
+  let editingMatch = null;
+
+  function syncSheet() {
+    if (!DKPL.api.enabled()) return;
+    DKPL.api.pushAll(S).catch(function (err) {
+      console.warn(err);
+      U.toast("Local save OK; Google Sheet sync failed");
+    });
+  }
 
   function app() {
     return document.getElementById("app");
@@ -37,6 +47,7 @@
         tab = btn.dataset.tab;
         editingTeam = null;
         editingPlayer = null;
+        editingMatch = null;
         render();
       }
       if (e.target.id === "signOut") U.signOut();
@@ -49,6 +60,7 @@
     if (tab === "teams") return teamsTab();
     if (tab === "players") return playersTab();
     if (tab === "fixtures") return fixturesTab();
+    if (tab === "playoffs") return playoffsTab();
     return dataTab();
   }
 
@@ -163,9 +175,53 @@
 
   function fixturesTab() {
     const matches = S.matches();
+    const teams = S.teams();
+    const m = editingMatch || {};
+    const stages = ["League"].concat(cfg.playoffs.stages);
+
+    function teamOptions(selected) {
+      return (
+        '<option value="">Select team</option>' +
+        teams
+          .map(function (t) {
+            return '<option value="' + U.esc(t.id) + '"' + (t.id === selected ? " selected" : "") + ">" + U.esc(t.name) + "</option>";
+          })
+          .join("")
+      );
+    }
+
+    const editForm = editingMatch
+      ? '<section class="card"><h2>Edit fixture</h2>' +
+        '<form id="matchForm"><div class="field-grid">' +
+        '<div class="field"><label for="matchTeamA">Team A</label><select id="matchTeamA" required>' + teamOptions(m.teamA) + "</select></div>" +
+        '<div class="field"><label for="matchTeamB">Team B</label><select id="matchTeamB" required>' + teamOptions(m.teamB) + "</select></div>" +
+        '<div class="field"><label for="matchStage">Stage</label><select id="matchStage">' +
+        stages
+          .map(function (s) {
+            return '<option value="' + U.esc(s) + '"' + (s === m.stage ? " selected" : "") + ">" + U.esc(s) + "</option>";
+          })
+          .join("") +
+        "</select></div>" +
+        '<div class="field"><label for="matchOvers">Overs</label><input id="matchOvers" type="number" min="1" max="20" value="' + U.esc(m.overs || cfg.oversOptions[cfg.oversOptions.length - 1]) + '"></div>' +
+        '<div class="field"><label for="matchVenue">Venue</label><input id="matchVenue" value="' + U.esc(m.venue || cfg.venueDefault) + '"></div>' +
+        '<div class="field"><label for="matchDate">Date / time</label><input id="matchDate" value="' + U.esc(m.date || "") + '"></div>' +
+        '<div class="field"><label for="matchStatus">Status</label><select id="matchStatus">' +
+        ["Upcoming", "Live", "Completed"]
+          .map(function (st) {
+            return '<option value="' + st + '"' + (st === m.status ? " selected" : "") + ">" + st + "</option>";
+          })
+          .join("") +
+        "</select></div>" +
+        "</div>" +
+        '<p class="notice">Changing teams or overs does not auto-fix scores. Use <strong>Reset score</strong> to wipe ball-by-ball data and start again.</p>' +
+        '<div class="row-actions"><button class="btn btn-primary" type="submit">Save fixture</button>' +
+        '<button class="btn btn-ghost" type="button" id="cancelMatch">Cancel</button></div></form></section>'
+      : "";
+
     return (
+      editForm +
       '<section class="card"><h2>Fixtures</h2>' +
-      '<p class="muted">Round robin creates every remaining league fixture (6 teams = 15 matches).</p>' +
+      '<p class="muted">Delete test matches or edit fixtures below. Round robin adds any missing league pairs (6 teams = 15).</p>' +
       '<div class="row-actions">' +
       '<button class="btn btn-primary" type="button" id="genLeague">Generate league fixtures</button>' +
       '<a class="btn btn-ghost" href="scorer.html">Start a match</a>' +
@@ -190,7 +246,11 @@
                 (m.result ? " · " + U.esc(m.result.text) : "") + "</small></span>" +
                 '<span class="row-buttons">' +
                 '<span class="badge ' + (m.status === "Live" ? "live" : m.status === "Completed" ? "done" : "up") + '">' + U.esc(m.status) + "</span>" +
+                '<button class="btn btn-ghost" type="button" data-edit-match="' + U.esc(m.id) + '">Edit</button>' +
                 '<a class="btn btn-ghost" href="scorer.html?match=' + U.esc(m.id) + '">Score</a>' +
+                (m.innings && m.innings.length
+                  ? '<button class="btn btn-ghost" type="button" data-reset-match="' + U.esc(m.id) + '">Reset score</button>'
+                  : "") +
                 '<button class="btn btn-danger" type="button" data-del-match="' + U.esc(m.id) + '">Delete</button>' +
                 "</span></div>"
               );
@@ -199,6 +259,26 @@
           "</div>"
         : '<p class="muted">No matches yet.</p>') +
       "</section>"
+    );
+  }
+
+  /* ------------------------------------------------------------- playoffs */
+
+  function playoffsTab() {
+    const s = S.settings();
+    const rulesText = s.rules.join("\n");
+    return (
+      '<section class="card"><h2>Playoffs &amp; qualification text</h2>' +
+      '<p class="muted">Shown on the home page and fixtures. IPL-style bracket after all league matches. Edit anytime — syncs to Google Sheets (Settings tab).</p>' +
+      '<form id="playoffsForm"><div class="field field-wide">' +
+      "<label for=\"playoffIntro\">Introduction</label>" +
+      '<textarea id="playoffIntro" rows="4">' + U.esc(s.intro) + "</textarea></div>" +
+      '<div class="field field-wide"><label for="playoffRules">Rules (one line each)</label>' +
+      '<textarea id="playoffRules" rows="10">' + U.esc(rulesText) + "</textarea></div>" +
+      '<div class="field field-wide"><label for="playoffNote">Extra note (optional)</label>' +
+      '<textarea id="playoffNote" rows="3" placeholder="e.g. Playoffs on Sunday 6 March at DKPL Ground">' + U.esc(s.adminNote) + "</textarea></div>" +
+      '<div class="row-actions"><button class="btn btn-primary" type="submit">Save &amp; sync</button></div></form></section>" +
+      (DKPL.playoffs ? DKPL.playoffs.sectionHtml(S.settingsRaw()) : "")
     );
   }
 
@@ -233,6 +313,63 @@
 
   function bind() {
     const root = document.getElementById("tabBody");
+
+    const matchForm = document.getElementById("matchForm");
+    if (matchForm) {
+      matchForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const teamA = document.getElementById("matchTeamA").value;
+        const teamB = document.getElementById("matchTeamB").value;
+        if (!teamA || !teamB || teamA === teamB) {
+          U.toast("Pick two different teams");
+          return;
+        }
+        const status = document.getElementById("matchStatus").value;
+        const keepScore = status !== "Upcoming";
+        S.saveMatch({
+          id: editingMatch.id,
+          teamA: teamA,
+          teamB: teamB,
+          stage: document.getElementById("matchStage").value,
+          overs: Number(document.getElementById("matchOvers").value) || 10,
+          venue: document.getElementById("matchVenue").value.trim(),
+          date: document.getElementById("matchDate").value.trim(),
+          status: status,
+          innings: keepScore ? editingMatch.innings || [] : [],
+          result: keepScore ? editingMatch.result || null : null,
+          toss: keepScore ? editingMatch.toss || null : null,
+          playerOfMatch: keepScore ? editingMatch.playerOfMatch || "" : ""
+        });
+        editingMatch = null;
+        U.toast("Fixture saved");
+        syncSheet();
+        render();
+      });
+    }
+
+    const playoffsForm = document.getElementById("playoffsForm");
+    if (playoffsForm) {
+      playoffsForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const rules = document
+          .getElementById("playoffRules")
+          .value.split("\n")
+          .map(function (line) {
+            return line.trim();
+          })
+          .filter(Boolean);
+        S.saveSettings({
+          intro: document.getElementById("playoffIntro").value.trim(),
+          rules: rules,
+          adminNote: document.getElementById("playoffNote").value.trim()
+        });
+        U.toast("Playoff instructions saved");
+        DKPL.api.pushSettings(S.settingsRaw()).catch(function () {
+          U.toast("Saved locally; sheet sync failed");
+        });
+        render();
+      });
+    }
 
     const teamForm = document.getElementById("teamForm");
     if (teamForm) {
@@ -326,11 +463,41 @@
         return;
       }
 
+      if (target.id === "cancelMatch") {
+        editingMatch = null;
+        return render();
+      }
+
+      const editMatch = target.closest("[data-edit-match]");
+      if (editMatch) {
+        editingMatch = S.matchById(editMatch.dataset.editMatch);
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      const resetMatch = target.closest("[data-reset-match]");
+      if (resetMatch) {
+        const ok = await U.confirm(
+          "Reset this match score?",
+          "All innings and the result will be cleared. The fixture stays as Upcoming."
+        );
+        if (ok) {
+          S.resetMatch(resetMatch.dataset.resetMatch);
+          U.toast("Score cleared");
+          syncSheet();
+          render();
+        }
+        return;
+      }
+
       const delMatch = target.closest("[data-del-match]");
       if (delMatch) {
         const ok = await U.confirm("Delete this match?", "Scores for this match will be lost.");
         if (ok) {
           S.deleteMatch(delMatch.dataset.delMatch);
+          U.toast("Match deleted");
+          syncSheet();
           render();
         }
         return;

@@ -42,10 +42,25 @@
   }
 
   /** Push teams, players and matches in one go (use after scoring or from Admin). */
+  async function pushSettings(data) {
+    if (!enabled()) return null;
+    const body = JSON.stringify({ action: "save", entity: "settings", data: data || {} });
+    const res = await fetch(cfg.apiBase, {
+      method: "POST",
+      redirect: "follow",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: body
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error("Settings write failed: " + res.status);
+    return parseJson(text);
+  }
+
   async function pushAll(store) {
     await push("teams", store.teams());
     await push("players", store.players());
     await push("matches", store.matches());
+    if (store.settingsRaw) await pushSettings(store.settingsRaw());
   }
 
   async function testConnection() {
@@ -58,5 +73,12 @@
     };
   }
 
-  DKPL.api = { enabled: enabled, pull: pull, push: push, pushAll: pushAll, testConnection: testConnection };
+  DKPL.api = {
+    enabled: enabled,
+    pull: pull,
+    push: push,
+    pushSettings: pushSettings,
+    pushAll: pushAll,
+    testConnection: testConnection
+  };
 })();

@@ -116,6 +116,11 @@
           '<p class="muted">' + U.esc(mvp.teamName) + " · " + mvp.runs + " runs · " + mvp.wickets + " wickets</p>" +
           '<p class="score">' + mvp.mvp + " pts</p></div></article>"
         : U.empty("MVP rankings appear after the first match.");
+
+      const playoffsEl = document.getElementById("playoffsSlot");
+      if (playoffsEl && DKPL.playoffs) {
+        playoffsEl.innerHTML = DKPL.playoffs.sectionHtml(S.settingsRaw());
+      }
       }
 
       renderHome();
@@ -216,14 +221,7 @@
         group("Live", matches.filter(function (m) { return m.status === "Live"; })) +
         group("Upcoming", matches.filter(function (m) { return m.status === "Upcoming"; })) +
         group("Results", matches.filter(function (m) { return m.status === "Completed"; })) +
-        '<section class="section"><div class="section-head"><h2>Knockout stage</h2></div>' +
-        '<div class="grid grid-3">' +
-        cfg.knockout
-          .map(function (k) {
-            return '<article class="card"><span class="badge up">' + U.esc(k.stage) + "</span><h3>" + U.esc(k.detail) + "</h3></article>";
-          })
-          .join("") +
-        "</div></section>";
+        (DKPL.playoffs ? DKPL.playoffs.sectionHtml(S.settingsRaw()) : "");
     },
 
     points: function () {
@@ -241,7 +239,7 @@
             })
             .join("") +
           "</tbody></table>" +
-          '<p class="notice">Top ' + cfg.qualify + " teams qualify. Net run rate breaks ties.</p></div>"
+          '<p class="notice">Top ' + cfg.qualify + " teams enter IPL-style playoffs after the league. NRR breaks ties.</p></div>"
         : U.empty("No teams yet.", "admin.html", "Add teams");
     },
 
