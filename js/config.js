@@ -12,8 +12,7 @@ window.DKPL_CONFIG = {
   /** Official player guidelines (English summary of the Kannada DKPL rules). */
   tournamentRules: {
     intro:
-      "Every registered player must read and follow these rules. " +
-      "This page is the English summary for DKPL 2026; the Kannada version signed at registration remains the official reference.",
+      "Every registered player must read and follow these rules. English first; the Kannada text follows below.",
     sections: [
       {
         title: "Registration, conduct & responsibility",
@@ -72,6 +71,69 @@ window.DKPL_CONFIG = {
           "League points: two points for a win and zero for a loss. Net run rate (NRR) is used to separate teams level on points.",
           "The top four teams on the league table qualify for the playoffs: Qualifier 1, Eliminator, Qualifier 2, and the Final (see the Playoffs tab on this site).",
           "MVP points are calculated automatically from batting, bowling, and fielding in each match; see the Statistics page for rankings."
+        ]
+      }
+    ],
+    kannadaIntro:
+      "ನೋಂದಾಯಿತ ಪ್ರತಿ ಆಟಗಾರರು ಈ ನಿಯಮಗಳನ್ನು ಓದಿ ಪಾಲಿಸಬೇಕು. ನೋಂದಣಿಯ ಸಮಯದಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕನ್ನಡ ನಿಯಮಗಳು ಅಧಿಕೃತ ಉಲ್ಲೇಖ.",
+    kannadaSections: [
+      {
+        title: "ನೋಂದಣಿ, ವರ್ತನೆ ಮತ್ತು ಜವಾಬ್ದಾರಿ",
+        items: [
+          "ನೋಂದಾಯಿತ ಎಲ್ಲಾ ಆಟಗಾರರು DKPL ಪಂದ್ಯಾವಳಿಯ ನಿಯಮಗಳನ್ನು ಮತ್ತು ಆಯೋಜಕರು ಪ್ರಕಟಿಸುವ ಯಾವುದೇ ಬದಲಾವಣೆಗಳನ್ನೂ ಕಟ್ಟುನಿಟ್ಟಾಗಿ ಪಾಲಿಸಬೇಕು.",
+          "ನೋಂದಣಿಯ ನಂತರ ಪ್ರತಿ ಆಟಗಾರನನ್ನು ಹರಾಜು ಮೂಲಕ ತಂಡಕ್ಕೆ ನಿಯೋಜಿಸಲಾಗುತ್ತದೆ. ಹರಾಜಿನಲ್ಲಿ ಒಂದು ತಂಡ ಆಯ್ಕೆ ಮಾಡಿದ ನಂತರ ಬೇರೆ ತಂಡಕ್ಕೆ ಬದಲಾಯಿಸಲು ಅವಕಾಶವಿಲ್ಲ.",
+          "ಹರಾಜಿನಲ್ಲಿ ತಮ್ಮನ್ನು ಆಯ್ಕೆ ಮಾಡಿದ ತಂಡದ ಮಾಲೀಕರು ಮತ್ತು ಕ್ಯಾಪ್ಟನ್ ತೆಗೆದುಕೊಂಡ ನಿರ್ಧಾರಗಳನ್ನು ಆಟಗಾರರು ಸ್ವೀಕರಿಸಿ ಅನುಸರಿಸಬೇಕು.",
+          "ದೊಡ್ಡಕಿತ್ತದಹಳ್ಳಿ ಯುವಕರ ಸ್ನೇಹ, ಐಕ್ಯತೆ, ಗ್ರಾಮದ ಅಭಿವೃದ್ಧಿ ಮತ್ತು ಆರೋಗ್ಯಕರ ಮನರಂಜನೆಗಾಗಿ DKPL ಆಯೋಜಿಸಲಾಗಿದೆ.",
+          "ಪಂದ್ಯಾವಳಿಯ ಸಮಯದ ಅಶೋಭ್ಯ, ಅಸಭ್ಯ ಅಥವಾ ಶಿಸ್ತಿಲ್ಲದ ವರ್ತನೆ ಕಂಡು ಬಂದಲ್ಲಿ ಕಠಿಣ ಶಿಸ್ತು ಕ್ರಮ (ಪಂದ್ಯಗಳಿಂದ ಅಮಾನತು ಸೇರಿ) ಜಾರಿಗೆ ಬರಬಹುದು.",
+          "ಹರಾಜಿನಲ್ಲಿ ಯಾವುದೇ ತಂಡವೂ ಆಯ್ಕೆ ಮಾಡದ ಆಟಗಾರರ ನೋಂದಣಿ ಶುಲ್ಕವನ್ನು ಹಿಂತಿರುಗಿಸಲಾಗುತ್ತದೆ.",
+          "ಪಂದ್ಯಾವಳಿಯ ಸಮಯದಲ್ಲಿ ಆಟಗಾರರಿಗೆ ಸಂಭವಿಸುವ ಅಪಘಾತ, ಗಾಯ ಅಥವಾ ಇತರ ಅನಾಹುತಗಳಿಗೆ DKPL franchise ಮತ್ತು ಆಯೋಜಕರು ಜವಾಬ್ದಾರರಲ್ಲ. ಪ್ರತಿ ಆಟಗಾರ ತಮ್ಮ ಸ್ವಂತ ಅಪಾಯದಲ್ಲಿ ಪಾಲ್ಗೊಳ್ಳುತ್ತಾರೆ.",
+          "ಅಧಿಕೃತ ವೆಬ್‌ಸೈಟ್‌ನಲ್ಲಿ ತಂಡದ squad ನಲ್ಲಿ ನಮೂದಿಸಿದ ಆಟಗಾರರು ಮಾತ್ರ ಆಡಬಹುದು. ಆಯೋಜಕ ಸಮಿತಿಯ ಬರಹದ ಮಂಜೂರಿ ಇಲ್ಲದೆ ಅತಿಥಿ ಅಥವಾ ನೋಂದಾಯಿತವಲ್ಲದ ಆಟಗಾರರು ground ಗೆ ಇಳಿಯಲು ಸಾಧ್ಯವಿಲ್ಲ.",
+          "ಪಂದ್ಯದ ದಿನ ನ್ಯಾಯಾಧೀಶರು ಮತ್ತು captains (ಟಾಸ್, line-up, ground ವಿವಾದಗಳು) ತೆಗೆದ ನಿರ್ಧಾರಗಳು, ಸಮಿತಿಯ ಬರಹದ ಪುನರ್ ಪರಿಶೀಲನೆ ಇಲ್ಲದೆ, ಆ ಪಂದ್ಯಕ್ಕೆ ಅಂತಿಮ.",
+          "ಹವಾಮಾನ, ground conditions ಅಥವಾ ಸುರಕ್ಷತೆ ಕಾರಣಗಳಿಗಾಗಿ ಆಯೋಜಕ ಸಮಿತಿ ಪಂದ್ಯಗಳನ್ನು ಮರುನಿಗದಿ ಮಾಡಬಹುದು. ಬದಲಾವಣೆಗಳನ್ನು ಸಾಧ್ಯವಾದಾಗ ಈ ವೆಬ್‌ಸೈಟ್‌ನಲ್ಲಿ ಹಂಚಲಾಗುತ್ತದೆ."
+        ]
+      },
+      {
+        title: "ವಸ್ತ್ರ ಧೋರಣೆ (Dress code)",
+        items: [
+          "ಪ್ರತಿ ಪಂದ್ಯಕ್ಕೂ ಪ್ರತಿ ಆಟಗಾರರಿಗೆ dress code ಅನಿವಾರ್ಯ.",
+          "ಅಧಿಕೃತ team jersey ಮತ್ತು team pant (trousers) ಕಡ್ಡಾಯ. ಪೂರ್ಣ team kit ಇಲ್ಲದ ಆಟಗಾರರನ್ನು umpires ಅಥವಾ committee ground ಗೆ ಇಳಿಯಲು ನಿರಾಕರಿಸಬಹುದು."
+        ]
+      },
+      {
+        title: "ಗಾಯ, ಬದಲಿ ಮತ್ತು ತಂಡದ ಲಭ್ಯತೆ",
+        items: [
+          "substitute fielders ಅಥವಾ batters ಗೆ runners ಇರುವುದಿಲ್ಲ. batter injured ಆದರೆ retire hurt ಅಥವಾ runner ಇಲ್ಲದೆ ಮುಂದುವರಿಯಬೇಕು — cricket ನಿಯಮಗಳು ಮತ್ತು umpires ನಿರ್ಧಾರ.",
+          "ಕೆಲವು ಆಟಗಾರರು unavailable ಆದರೂ present ಇರುವವರೊಂದಿಗೆ ತಂಡ ಆಡಬೇಕು (ಉದಾ. 9 ಅಥವಾ 10 ಆಟಗಾರರು).",
+          "registered squad ನಲ್ಲಿ 3 ಕ್ಕಿಂತ ಹೆಚ್ಚು ಆಟಗಾರರು unavailable ಆದರೆ ಆ ತಂಡ ಪಂದ್ಯ ಆಡಲು eligible ಅಲ್ಲ. ಎದುರಾಳಿ ತಂಡಕ್ಕೆ match ಮತ್ತು league points ಸಿಗುತ್ತದೆ."
+        ]
+      },
+      {
+        title: "ಇನ್ನಿಂಗ್ಸ್ ಸಮಯ, ದಂಡ ಮತ್ತು ಟೈ",
+        items: [
+          "ಪ್ರತಿ innings ಗೆ umpires ಅಳೆಯುವ playing time 40 ನಿಮಿಷಗಳು.",
+          "40 ನಿಮಿಷ ಮೀರಿದರೆ delay caused ಮಾಡಿದ ತಂಡಕ್ಕೆ 5 run penalty (umpires ನಿರ್ಧಾರ). bowling/fielding delay — fielding ತಂಡ; batting delay — batting ತಂಡ.",
+          "scores tie ಆದರೆ Super Over ನಿಂದ winner ನಿರ್ಧಾರ (committee ವಿಶೇಷ fixture ಗೆ ಬೇರೆ tie-break ಹೇಳಿದರೆ ಅದು)."
+        ]
+      },
+      {
+        title: "Match scorer ಬಳಕೆ",
+        items: [
+          "ಸಾಧಾರಣ ball: runs (0–6) tap ಮಾಡಿ.",
+          "Wide: WD ಒಮ್ಮೆ, wide only (1 run) ಗೆ WD ಮತ್ತೆ; wide + bye runs ಗೆ 1–4 tap (team total = 1 wide + byes; byes batter stats ಗೆ ಬರುವುದಿಲ್ಲ).",
+          "No ball: NB ಒಮ್ಮೆ, NB only (1 run) ಗೆ NB ಮತ್ತೆ; bat runs ಗೆ 0–6 tap (total = 1 NB + runs; batter bat runs ಪಡೆಯುತ್ತಾರೆ).",
+          "Normal ball run out: OUT → Run Out → runs → who is out → fielder. run number ಅನ್ನು ಮೊದಲು separate ball ಆಗಿ tap ಮಾಡಬೇಡಿ.",
+          "Wide run out: WD → OUT → Run Out → bye runs (0–4) → who is out → fielder.",
+          "No ball run out: NB → OUT → Run Out → bat runs → who is out → fielder.",
+          "ತಪ್ಪಾದರೆ UNDO ಬಳಸಿ ಮತ್ತೆ ನಮೂದಿಸಿ."
+        ]
+      },
+      {
+        title: "2026 ಸೀಜನ್ ಸ್ವರೂಪ",
+        items: [
+          "6 ತಂಡಗಳು, round-robin league — 15 league matches. schedule ಪ್ರಕಾರ 6, 8 ಅಥವಾ 10 overs.",
+          "League points: win = 2, loss = 0. Tie break ಗೆ net run rate (NRR).",
+          "League table ನ top 4 playoffs: Qualifier 1, Eliminator, Qualifier 2, Final (Playoffs tab ನೋಡಿ).",
+          "MVP points batting, bowling, fielding ನಿಂದ automatic; Statistics page ನ rankings."
         ]
       }
     ]
