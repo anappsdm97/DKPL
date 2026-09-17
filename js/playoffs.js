@@ -126,7 +126,8 @@
     );
   }
 
-  function sectionHtml(settings) {
+  function sectionHtml(settings, opts) {
+    const o = opts || {};
     const s = mergedSettings(settings);
     const rules = s.rules
       .map(function (line) {
@@ -134,10 +135,13 @@
       })
       .join("");
 
+    const heading = o.omitHeading
+      ? ""
+      : '<p class="kicker">After league · Top 4</p><h3>Playoffs &amp; qualification</h3>';
+
     return (
       '<article class="card playoff-card">' +
-      '<p class="kicker">After league · Top 4</p>' +
-      "<h3>Playoffs &amp; qualification</h3>" +
+      heading +
       '<p class="muted">' + esc(s.intro) + "</p>" +
       '<ul class="rule-list">' + rules + "</ul>" +
       (s.adminNote ? '<p class="situation admin-playoff-note">' + esc(s.adminNote) + "</p>" : "") +

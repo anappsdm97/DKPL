@@ -117,9 +117,14 @@
           '<p class="score">' + mvp.mvp + " pts</p></div></article>"
         : U.empty("MVP rankings appear after the first match.");
 
+      const rulesEl = document.getElementById("rulesSlot");
+      if (rulesEl && DKPL.rules) {
+        rulesEl.innerHTML = DKPL.rules.sectionHtml();
+      }
+
       const playoffsEl = document.getElementById("playoffsSlot");
       if (playoffsEl && DKPL.playoffs) {
-        playoffsEl.innerHTML = DKPL.playoffs.sectionHtml(S.settingsRaw());
+        playoffsEl.innerHTML = DKPL.playoffs.sectionHtml(S.settingsRaw(), { omitHeading: true });
       }
       }
 

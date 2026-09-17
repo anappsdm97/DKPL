@@ -39,15 +39,17 @@
       </div>
     </section>
 
-    <section class="section section-playoffs">
+    <section class="section section-home-tabs">
       <div class="wrap">
-        <div class="section-head">
-          <h2>Playoffs &amp; qualification</h2>
-          <a href="pages/fixtures.html">Fixtures</a>
+        <div class="home-tabs tabs" role="tablist" aria-label="Home sections">
+          <button class="tab active" type="button" role="tab" data-home-tab="overview" aria-selected="true">Overview</button>
+          <button class="tab" type="button" role="tab" data-home-tab="rules" aria-selected="false">Tournament rules</button>
+          <button class="tab" type="button" role="tab" data-home-tab="playoffs" aria-selected="false">Playoffs</button>
         </div>
-        <div id="playoffsSlot"></div>
       </div>
     </section>
+
+    <div id="homeTabOverview" class="home-tab-panel home-tab-panel-active">
 
     <section class="section">
       <div class="wrap">
@@ -114,7 +116,9 @@
         </div>
         <div class="menu">
           <a class="menu-card" href="pages/live.html">Live Score<span>Ball by ball, batters, bowler and required rate</span></a>
-          <a class="menu-card" href="pages/fixtures.html">Fixtures<span>League schedule, results and playoffs</span></a>
+          <a class="menu-card" href="#rules">Tournament rules<span>Player guidelines and season format</span></a>
+          <a class="menu-card" href="#playoffs">Playoffs<span>Top four, qualification and knockout path</span></a>
+          <a class="menu-card" href="pages/fixtures.html">Fixtures<span>League schedule and results</span></a>
           <a class="menu-card" href="pages/points.html">Points Table<span>Played, won, lost, points and net run rate</span></a>
           <a class="menu-card" href="pages/teams.html">Teams<span>Logos, captains and full squads</span></a>
           <a class="menu-card" href="pages/players.html">Players<span>Photos, roles and season numbers</span></a>
@@ -124,6 +128,32 @@
         </div>
       </div>
     </section>
+
+    </div>
+
+    <div id="homeTabRules" class="home-tab-panel" hidden>
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Tournament rules</h2>
+          </div>
+          <div id="rulesSlot"></div>
+        </div>
+      </section>
+    </div>
+
+    <div id="homeTabPlayoffs" class="home-tab-panel" hidden>
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Playoffs &amp; qualification</h2>
+            <a href="pages/fixtures.html">Fixtures</a>
+          </div>
+          <div id="playoffsSlot"></div>
+        </div>
+      </section>
+    </div>
+
   </main>
 
   <div id="siteFooter"></div>
@@ -135,6 +165,7 @@
   <script src="js/ui.js"></script>
   <script src="js/scoreboard.js"></script>
   <script src="js/playoffs.js"></script>
+  <script src="js/rules.js"></script>
   <script src="js/pages.js"></script>
   <script src="js/home.js"></script>
 </body>

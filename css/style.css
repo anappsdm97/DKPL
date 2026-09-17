@@ -644,6 +644,49 @@ table.mini td {
   margin-bottom: 8px;
 }
 
+.rule-list-numbered {
+  list-style: none;
+  padding-left: 0;
+  counter-reset: dkpl-rule;
+}
+
+.rule-list-numbered li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.rule-num {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--gold-2);
+  min-width: 1.4em;
+}
+
+.rules-card h3 {
+  margin: 0 0 10px;
+}
+
+.rules-card h4 {
+  margin: 20px 0 10px;
+  font-size: 1rem;
+  color: var(--gold-2);
+}
+
+.section-home-tabs {
+  padding-top: 8px;
+  padding-bottom: 0;
+}
+
+.home-tabs {
+  margin-bottom: 4px;
+}
+
+.home-tab-panel[hidden] {
+  display: none !important;
+}
+
 .admin-playoff-note {
   margin: 12px 0;
 }
