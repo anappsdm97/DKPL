@@ -120,6 +120,7 @@
       const rulesEl = document.getElementById("rulesSlot");
       if (rulesEl && DKPL.rules) {
         rulesEl.innerHTML = DKPL.rules.sectionHtml();
+        DKPL.rules.bindTabs(rulesEl);
       }
 
       const playoffsEl = document.getElementById("playoffsSlot");

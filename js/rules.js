@@ -44,26 +44,61 @@
     const r = cfg.tournamentRules;
     if (!r) return "";
 
-    let body = sectionsHtml(r.sections);
+    const knSections = r.kannadaSections || [];
+    const hasKn = knSections.length > 0;
 
-    if (r.kannadaSections && r.kannadaSections.length) {
-      body +=
-        '<div class="rules-lang-block" lang="kn">' +
-        '<h3 class="rules-lang-title">ಕನ್ನಡ</h3>' +
-        (r.kannadaIntro ? '<p class="muted">' + esc(r.kannadaIntro) + "</p>" : "") +
-        sectionsHtml(r.kannadaSections) +
-        "</div>";
-    }
+    const englishBlock =
+      '<p class="muted">' + esc(r.intro) + "</p>" + sectionsHtml(r.sections);
+
+    const kannadaBlock = hasKn
+      ? (r.kannadaIntro ? '<p class="muted">' + esc(r.kannadaIntro) + "</p>" : "") +
+        sectionsHtml(knSections)
+      : '<p class="muted">Kannada rules are not loaded. Refresh the page or check that the latest site files are published.</p>';
+
+    const tabs = hasKn
+      ? '<div class="rules-tabs tabs" role="tablist" aria-label="Rule language">' +
+        '<button type="button" class="tab active" data-rules-lang="en" aria-selected="true">English</button>' +
+        '<button type="button" class="tab" data-rules-lang="kn" aria-selected="false">ಕನ್ನಡ</button>' +
+        "</div>"
+      : "";
 
     return (
       '<article class="card rules-card">' +
-      '<p class="rules-lang-label kicker">English</p>' +
-      '<p class="muted">' + esc(r.intro) + "</p>" +
-      body +
+      tabs +
+      '<div class="rules-panel" data-rules-panel="en">' +
+      englishBlock +
+      "</div>" +
+      (hasKn
+        ? '<div class="rules-panel" data-rules-panel="kn" lang="kn" hidden>' + kannadaBlock + "</div>"
+        : "") +
       '<p class="notice">For questions or disputes off the field, contact the DKPL organising committee.</p>' +
       "</article>"
     );
   }
 
-  DKPL.rules = { sectionHtml: sectionHtml };
+  function bindTabs(container) {
+    if (!container) return;
+    const card = container.querySelector(".rules-card");
+    if (!card || card.dataset.rulesTabsBound === "yes") return;
+    card.dataset.rulesTabsBound = "yes";
+
+    card.querySelectorAll("[data-rules-lang]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const lang = btn.getAttribute("data-rules-lang");
+        card.querySelectorAll("[data-rules-lang]").forEach(function (b) {
+          const on = b === btn;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        card.querySelectorAll("[data-rules-panel]").forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-rules-panel") !== lang;
+        });
+      });
+    });
+  }
+
+  DKPL.rules = {
+    sectionHtml: sectionHtml,
+    bindTabs: bindTabs
+  };
 })();
