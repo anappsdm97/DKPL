@@ -263,10 +263,19 @@
   }
 
   function keypad() {
-    const hint = pendingExtra
-      ? pendingExtra + " selected — tap the runs scored, or tap " + pendingExtra + " again for a plain " +
-        (pendingExtra === "WD" ? "wide" : "no ball") + "."
-      : "Tap runs. Wides and no balls do not use up a ball. Strike and overs change automatically.";
+    let hint;
+    if (pendingExtra === "WD") {
+      hint =
+        "Wide selected — tap WD again for wide only (1 run). Or tap 1–4 for bye runs on the wide (total = 1 wide + byes). " +
+        "Run out / stumped on this wide: tap OUT (do not tap bye runs first unless it is a normal wide with byes only).";
+    } else if (pendingExtra === "NB") {
+      hint =
+        "No ball selected — tap NB again for no ball only (1 run). Or tap 0–6 for runs off the bat (total = 1 no-ball + those runs). " +
+        "Run out on this no-ball: tap OUT, then enter runs off the bat on the same no-ball.";
+    } else {
+      hint =
+        "Normal ball: tap runs. Run out with runs: tap OUT → Run Out → pick runs on that ball (not a separate run tap first). UNDO fixes mistakes.";
+    }
 
     const keys = [0, 1, 2, 3, 4, 5, 6]
       .map(function (n) {
@@ -351,6 +360,38 @@
     if (publish) publish.addEventListener("click", publishResult);
   }
 
+  function promptRunOutRuns(extra) {
+    if (extra === "WD") {
+      return U.choose("Bye runs on this wide? (1 wide is counted automatically)", [
+        { value: "0", label: "Wide only", sub: "Team total +1" },
+        { value: "1", label: "Wide + 1 bye", sub: "Team total +2" },
+        { value: "2", label: "Wide + 2 byes", sub: "Team total +3" },
+        { value: "3", label: "Wide + 3 byes", sub: "Team total +4" },
+        { value: "4", label: "Wide + 4 byes", sub: "Team total +5" }
+      ]);
+    }
+    if (extra === "NB") {
+      return U.choose("Runs off the bat on this no-ball? (1 no-ball run is counted automatically)", [
+        { value: "0", label: "No ball only", sub: "Team total +1, ball re-bowled" },
+        { value: "1", label: "1 run off the bat", sub: "Team total +2" },
+        { value: "2", label: "2 runs", sub: "Team total +3" },
+        { value: "3", label: "3 runs", sub: "" },
+        { value: "4", label: "4 runs", sub: "" },
+        { value: "5", label: "5 runs", sub: "" },
+        { value: "6", label: "6 runs", sub: "" }
+      ]);
+    }
+    return U.choose("Runs completed on this ball before the run out?", [
+      { value: "0", label: "0 runs", sub: "Direct hit, no run completed" },
+      { value: "1", label: "1 run", sub: "Single then run out" },
+      { value: "2", label: "2 runs", sub: "Two runs then run out" },
+      { value: "3", label: "3 runs", sub: "" },
+      { value: "4", label: "4 runs", sub: "" },
+      { value: "5", label: "5 runs", sub: "Overthrows etc." },
+      { value: "6", label: "6 runs", sub: "" }
+    ]);
+  }
+
   async function handleKey(key) {
     const m = match();
     const state = currentState(m);
@@ -398,7 +439,12 @@
     if (!type) return;
 
     let outBatsmanId = state.strikerId;
+    let runsOnBall = 0;
     if (type === "Run Out") {
+      const runsPick = await promptRunOutRuns(extra);
+      if (runsPick === null || runsPick === undefined) return;
+      runsOnBall = Number(runsPick) || 0;
+
       outBatsmanId = await U.choose("Which batter is out?", [
         { value: state.strikerId, label: S.playerName(state.strikerId), sub: "Striker" },
         { value: state.nonStrikerId, label: S.playerName(state.nonStrikerId), sub: "Non-striker" }
@@ -427,7 +473,7 @@
 
     pendingExtra = null;
     applyDelivery({
-      runs: 0,
+      runs: type === "Run Out" ? runsOnBall : 0,
       extra: extra,
       wicket: { type: type, outBatsmanId: outBatsmanId, fielderId: fielderId || "", newBatsmanId: newBatsmanId }
     });
