@@ -11,6 +11,8 @@
  * 6. Test: open YOUR_URL?action=ping — must show JSON, not "doGet not found".
  * 7. Project settings → Script properties: ADMIN_PIN, SCORER_PIN (never commit PINs to GitHub).
  *    Redeploy web app after Code.gs changes.
+ * 8. Scheduled backups (optional): File → Project settings → Time zone = Asia/Kolkata.
+ *    Run installBackupTriggers once before the tournament window. Run removeBackupTriggers after it ends.
  *
  * Sheets used: Teams, Players, Matches, BallByBall, Settings.
  * BallByBall is written for analysis; the app reads Matches.
@@ -363,4 +365,156 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* --------------------------------------------------------- scheduled backup */
+
+/**
+ * Copies DKPL-2026 to Drive every 3 hours between 7:00 and 19:00 (7 pm),
+ * only from BACKUP_START through BACKUP_END (inclusive), in the script time zone.
+ */
+var BACKUP_START_YMD = "2026-10-11";
+var BACKUP_END_YMD = "2026-10-24";
+var BACKUP_HOUR_START = 7;
+var BACKUP_HOUR_END = 19;
+var BACKUP_EVERY_HOURS = 3;
+var BACKUP_FOLDER_NAME = "DKPL-2026 Backups";
+
+function shouldRunScheduledBackup(now) {
+  var tz = Session.getScriptTimeZone();
+  if (!now) now = new Date();
+  var ymd = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+  if (ymd < BACKUP_START_YMD || ymd > BACKUP_END_YMD) return false;
+
+  var hour = Number(Utilities.formatDate(now, tz, "H"));
+  if (hour < BACKUP_HOUR_START || hour > BACKUP_HOUR_END) return false;
+  if ((hour - BACKUP_HOUR_START) % BACKUP_EVERY_HOURS !== 0) return false;
+  return true;
+}
+
+function getBackupFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var folderId = props.getProperty("BACKUP_FOLDER_ID");
+  if (folderId) {
+    try {
+      return DriveApp.getFolderById(folderId);
+    } catch (err) {
+      Logger.log("BACKUP_FOLDER_ID invalid, creating default folder.");
+    }
+  }
+
+  var ss = getSpreadsheet();
+  var file = DriveApp.getFileById(ss.getId());
+  var parent = file.getParents().hasNext() ? file.getParents().next() : DriveApp.getRootFolder();
+  var folders = parent.getFoldersByName(BACKUP_FOLDER_NAME);
+  var folder = folders.hasNext() ? folders.next() : parent.createFolder(BACKUP_FOLDER_NAME);
+  props.setProperty("BACKUP_FOLDER_ID", folder.getId());
+  return folder;
+}
+
+/**
+ * Creates a copy of the spreadsheet. Set force true to ignore the schedule (manual test).
+ */
+function backupDKPL(force) {
+  var tz = Session.getScriptTimeZone();
+  var now = new Date();
+  if (!force && !shouldRunScheduledBackup(now)) {
+    Logger.log(
+      "Backup skipped (outside " +
+        BACKUP_START_YMD +
+        "–" +
+        BACKUP_END_YMD +
+        ", 7am–7pm every " +
+        BACKUP_EVERY_HOURS +
+        "h, tz=" +
+        tz +
+        ")."
+    );
+    return { ok: false, skipped: true, reason: "outside_schedule" };
+  }
+
+  var ss = getSpreadsheet();
+  var folder = getBackupFolder();
+  var hourKey = Utilities.formatDate(now, tz, "yyyy-MM-dd-HHmm");
+  var copyName = ss.getName() + " backup " + hourKey;
+
+  var existing = folder.getFilesByName(copyName);
+  if (existing.hasNext()) {
+    Logger.log("Backup already exists for this slot: " + copyName);
+    return { ok: true, skipped: true, reason: "already_exists", name: copyName };
+  }
+
+  var copy = ss.copy(copyName);
+  copy.moveTo(folder);
+  Logger.log("Backup created: " + copyName + " → folder " + folder.getName());
+  return { ok: true, skipped: false, name: copyName, fileId: copy.getId(), folderId: folder.getId() };
+}
+
+/** Hourly trigger entry point — only copies when shouldRunScheduledBackup is true. */
+function backupDKPLScheduled() {
+  backupDKPL(false);
+}
+
+/** Run from the editor to test a backup immediately (ignores date/time window). */
+function runBackupNow() {
+  var result = backupDKPL(true);
+  Logger.log(JSON.stringify(result));
+  try {
+    SpreadsheetApp.getUi().alert(result.ok ? "Backup created: " + result.name : "Backup failed or skipped.");
+  } catch (e) {
+    // No UI in some contexts.
+  }
+}
+
+/** One-time setup: hourly check, copy every 3 hours between 7:00 and 19:00 on match days. */
+function installBackupTriggers() {
+  removeBackupTriggers();
+  ScriptApp.newTrigger("backupDKPLScheduled").timeBased().everyHours(1).create();
+  Logger.log(
+    "Installed hourly backup trigger. Active copies only " +
+      BACKUP_START_YMD +
+      " to " +
+      BACKUP_END_YMD +
+      ", at " +
+      BACKUP_HOUR_START +
+      ", " +
+      (BACKUP_HOUR_START + BACKUP_EVERY_HOURS) +
+      ", … up to " +
+      BACKUP_HOUR_END +
+      ":00 (" +
+      Session.getScriptTimeZone() +
+      ")."
+  );
+  try {
+    SpreadsheetApp.getUi().alert(
+      "Backup trigger installed.\nTime zone: " +
+        Session.getScriptTimeZone() +
+        "\nWindow: " +
+        BACKUP_START_YMD +
+        " – " +
+        BACKUP_END_YMD +
+        ", every " +
+        BACKUP_EVERY_HOURS +
+        " hours from " +
+        BACKUP_HOUR_START +
+        ":00 to " +
+        BACKUP_HOUR_END +
+        ":00."
+    );
+  } catch (e) {}
+}
+
+/** Removes scheduled backup triggers when the tournament window is over. */
+function removeBackupTriggers() {
+  var removed = 0;
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === "backupDKPLScheduled") {
+      ScriptApp.deleteTrigger(trigger);
+      removed += 1;
+    }
+  });
+  Logger.log("Removed " + removed + " backup trigger(s).");
+  try {
+    if (removed) SpreadsheetApp.getUi().alert("Removed " + removed + " backup trigger(s).");
+  } catch (e) {}
 }

@@ -117,19 +117,31 @@
           '<p class="score">' + mvp.mvp + " pts</p></div></article>"
         : U.empty("MVP rankings appear after the first match.");
 
-      const rulesEl = document.getElementById("rulesSlot");
-      if (rulesEl && DKPL.rules) {
-        rulesEl.innerHTML = DKPL.rules.sectionHtml();
-        DKPL.rules.bindTabs(rulesEl);
       }
 
-      const playoffsEl = document.getElementById("playoffsSlot");
-      if (playoffsEl && DKPL.playoffs) {
-        playoffsEl.innerHTML = DKPL.playoffs.sectionHtml(S.settingsRaw(), { omitHeading: true });
+      function renderRulesOnce() {
+        const rulesEl = document.getElementById("rulesSlot");
+        if (!rulesEl || !DKPL.rules || rulesEl.dataset.rendered === "yes") return;
+        rulesEl.innerHTML = DKPL.rules.sectionHtml();
+        DKPL.rules.bindTabs(rulesEl);
+        rulesEl.dataset.rendered = "yes";
       }
+
+      function renderPlayoffsBlock() {
+        const playoffsEl = document.getElementById("playoffsSlot");
+        if (playoffsEl && DKPL.playoffs) {
+          playoffsEl.innerHTML = DKPL.playoffs.sectionHtml(S.settingsRaw(), { omitHeading: true });
+        }
       }
 
       renderHome();
+      renderRulesOnce();
+      renderPlayoffsBlock();
+
+      window.addEventListener("dkpl-data-changed", function (ev) {
+        if (ev.detail && ev.detail.key === "dkpl.settings") renderPlayoffsBlock();
+      });
+
       attachLiveRefresh(renderHome);
     },
 
