@@ -1,7 +1,7 @@
 /** Ball-by-ball scoring console. */
 (function () {
-  const DKPL = window.DKPL;
-  const cfg = window.DKPL_CONFIG;
+  const DKPL = window.DKPL || {};
+  const cfg = window.DKPL_CONFIG || {};
   const S = DKPL.store;
   const E = DKPL.engine;
   const U = DKPL.ui;
@@ -678,13 +678,25 @@
     document.getElementById("scorerLock").addEventListener("click", U.signOutScorer);
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    U.mount("");
-    U.requireScorer(app(), function () {
-      mountScorerChrome();
-      S.ready().then(render).catch(function () {
-        render();
+  function boot() {
+    try {
+      if (U && U.mount) U.mount("");
+    } catch (err) {
+      console.error(err);
+    }
+    if (U && U.requireScorer) {
+      U.requireScorer(app(), function () {
+        mountScorerChrome();
+        (S && S.ready ? S.ready() : Promise.resolve()).then(render).catch(function () {
+          render();
+        });
       });
-    });
-  });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();

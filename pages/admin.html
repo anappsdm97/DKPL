@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#07150f">
   <link rel="icon" href="../images/dkpl-logo.png">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/style.css?v=260923c">
+  <link rel="stylesheet" href="../css/style.css?v=260923d">
 </head>
 <body>
   <div id="siteHeader"></div>
@@ -17,17 +17,61 @@
       <h1>Admin console</h1>
       <p class="muted">Add teams and players, create fixtures, and run match day. Admin PIN required.</p>
     </div>
-    <div id="app"></div>
+    <div id="app">
+      <form class="card lock-card" id="pinForm">
+        <h2>Admin access</h2>
+        <p class="muted">Enter the admin PIN to manage teams, players, fixtures, playoffs and data.</p>
+        <div class="field"><label for="pin">Admin PIN</label>
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" required></div>
+        <button class="btn btn-primary" type="submit" id="pinSubmit">Unlock</button>
+        <p class="notice" id="pinError" hidden>Incorrect PIN.</p>
+      </form>
+    </div>
   </main>
   <div id="siteFooter"></div>
 
-  <script src="../js/config.js?v=260923c"></script>
-  <script src="../js/engine.js?v=260923c"></script>
-  <script src="../js/api.js?v=260923c"></script>
-  <script src="../js/store.js?v=260923c"></script>
-  <script src="../js/ui.js?v=260923c"></script>
-  <script src="../js/scoreboard.js?v=260923c"></script>
-  <script src="../js/playoffs.js?v=260923c"></script>
-  <script src="../js/admin.js?v=260923c"></script>
+  <script src="../js/config.js?v=260923d"></script>
+  <script src="../js/engine.js?v=260923d"></script>
+  <script src="../js/api.js?v=260923d"></script>
+  <script src="../js/store.js?v=260923d"></script>
+  <script src="../js/ui.js?v=260923d"></script>
+  <script src="../js/scoreboard.js?v=260923d"></script>
+  <script src="../js/playoffs.js?v=260923d"></script>
+  <script src="../js/admin.js?v=260923d"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("pinForm");
+      if (!form || form.getAttribute("data-bound") === "yes") return;
+      form.setAttribute("data-bound", "yes");
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var pin = document.getElementById("pin").value.trim();
+        var err = document.getElementById("pinError");
+        var btn = document.getElementById("pinSubmit");
+        var api = window.DKPL && window.DKPL.api;
+        err.hidden = true;
+        if (!api || !api.enabled()) {
+          err.textContent = "Login is not ready. Confirm config.js loaded, then refresh.";
+          err.hidden = false;
+          return;
+        }
+        btn.disabled = true;
+        api.auth("admin", pin).then(function (result) {
+          if (result && result.ok && result.token) {
+            api.setSession(result.token, result.role);
+            location.reload();
+            return;
+          }
+          err.textContent = "Incorrect PIN.";
+          err.hidden = false;
+        }).catch(function () {
+          err.textContent = "Could not verify PIN. Redeploy Apps Script after adding Script properties.";
+          err.hidden = false;
+        }).finally(function () {
+          btn.disabled = false;
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -424,7 +424,7 @@
     },
 
     isPlayoffStage: function (stage) {
-      return cfg.playoffs.stages.indexOf(stage) >= 0;
+      return Boolean(cfg && cfg.playoffs && cfg.playoffs.stages && cfg.playoffs.stages.indexOf(stage) >= 0);
     },
 
     playoffMatch: function (stage) {

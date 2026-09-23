@@ -61,8 +61,8 @@
     return (
       '<header class="site-header"><div class="wrap header-inner">' +
       '<a class="brand" href="' + b + 'index.html">' +
-      '<img src="' + b + esc(cfg.logo) + '" alt="' + esc(cfg.tournamentName) + ' logo">' +
-      "<span><strong>" + esc(cfg.tournamentName) + "</strong><small>Doddakittadahalli Premier League</small></span>" +
+      '<img src="' + b + esc((cfg && cfg.logo) || "images/dkpl-logo.png") + '" alt="' + esc((cfg && cfg.tournamentName) || "DKPL") + ' logo">' +
+      "<span><strong>" + esc((cfg && cfg.tournamentName) || "DKPL") + "</strong><small>Doddakittadahalli Premier League</small></span>" +
       "</a>" +
       '<button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">' +
       '<span></span><span></span><span></span></button>' +
@@ -75,10 +75,10 @@
     const b = base();
     return (
       '<footer class="site-footer"><div class="wrap footer-inner">' +
-      "<div><strong>" + esc(cfg.fullName) + "</strong>" +
+      "<div><strong>" + esc((cfg && cfg.fullName) || "DKPL") + "</strong>" +
       "<p>6 teams · 15 league matches · top 4 → playoffs</p></div>" +
       "<div><p>" +
-      cfg.playoffs.bracket
+      ((cfg && cfg.playoffs && cfg.playoffs.bracket) || [])
         .map(function (k) {
           return esc(k.stage) + ": " + esc(k.detail);
         })
@@ -107,7 +107,7 @@
   }
 
   function checkAssetVersion() {
-    if (!cfg.assetVersion || document.getElementById("assetBanner")) return;
+    if (!cfg || !cfg.assetVersion || document.getElementById("assetBanner")) return;
     fetch(base() + "js/version.txt?t=" + Date.now(), { cache: "no-store" })
       .then(function (res) {
         return res.text();
@@ -210,21 +210,28 @@
   }
 
   function pinGate(container, opts, onUnlock) {
+    if (!container) return;
     if (opts.alreadyUnlocked()) {
       onUnlock();
       return;
     }
-    container.innerHTML =
-      '<form class="card lock-card" id="pinForm">' +
-      "<h2>" + esc(opts.title) + "</h2>" +
-      '<p class="muted">' + esc(opts.hint) + "</p>" +
-      '<div class="field"><label for="pin">' + esc(opts.label) + "</label>" +
-      '<input id="pin" type="password" inputmode="numeric" autocomplete="off" required></div>' +
-      '<button class="btn btn-primary" type="submit" id="pinSubmit">Unlock</button>' +
-      '<p class="notice" id="pinError" hidden>Incorrect PIN.</p>' +
-      "</form>";
+    var form = container.querySelector("#pinForm") || document.getElementById("pinForm");
+    if (!form) {
+      container.innerHTML =
+        '<form class="card lock-card" id="pinForm">' +
+        "<h2>" + esc(opts.title) + "</h2>" +
+        '<p class="muted">' + esc(opts.hint) + "</p>" +
+        '<div class="field"><label for="pin">' + esc(opts.label) + "</label>" +
+        '<input id="pin" type="password" inputmode="numeric" autocomplete="off" required></div>' +
+        '<button class="btn btn-primary" type="submit" id="pinSubmit">Unlock</button>' +
+        '<p class="notice" id="pinError" hidden>Incorrect PIN.</p>' +
+        "</form>";
+      form = container.querySelector("#pinForm");
+    }
+    if (!form || form.dataset.bound === "yes") return;
+    form.dataset.bound = "yes";
 
-    document.getElementById("pinForm").addEventListener("submit", function (e) {
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
       const value = document.getElementById("pin").value.trim();
       const errEl = document.getElementById("pinError");

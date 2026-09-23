@@ -11,7 +11,7 @@
   const ROLE_KEY = "dkpl.authRole";
 
   function enabled() {
-    return Boolean(cfg.apiBase);
+    return Boolean(cfg && cfg.apiBase);
   }
 
   function parseJson(text) {

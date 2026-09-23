@@ -93,8 +93,9 @@
     let partRuns = 0;
     let partBalls = 0;
     const fow = [];
-    let striker = inn.openers.strikerId;
-    let nonStriker = inn.openers.nonStrikerId;
+    const openers = inn.openers || {};
+    let striker = openers.strikerId;
+    let nonStriker = openers.nonStrikerId;
 
     inn.deliveries.forEach(function (d) {
       const overIndex = Math.floor(legal / 6);

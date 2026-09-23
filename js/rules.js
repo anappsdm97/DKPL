@@ -47,7 +47,7 @@
   }
 
   function sectionHtml() {
-    const r = cfg.tournamentRules;
+    const r = window.DKPL_RULES || (cfg && cfg.tournamentRules);
     if (!r) return "";
 
     const knSections = r.kannadaSections || [];

@@ -1,7 +1,7 @@
 /** Admin console: full control over teams, players, fixtures and matches. */
 (function () {
-  const DKPL = window.DKPL;
-  const cfg = window.DKPL_CONFIG;
+  const DKPL = window.DKPL || {};
+  const cfg = window.DKPL_CONFIG || {};
   const S = DKPL.store;
   const U = DKPL.ui;
 
@@ -32,6 +32,7 @@
   }
 
   function render() {
+    try {
     app().innerHTML =
       '<div class="tabs">' +
       TABS.map(function (t) {
@@ -54,6 +55,16 @@
     });
 
     bind();
+    } catch (err) {
+      console.error(err);
+      var box = app();
+      if (box) {
+        box.innerHTML =
+          '<div class="card"><h2>Admin error</h2><p class="notice">' +
+          (U && U.esc ? U.esc(err && err.message ? err.message : String(err)) : String(err)) +
+          "</p></div>";
+      }
+    }
   }
 
   function body() {
@@ -278,7 +289,7 @@
       '<textarea id="playoffRules" rows="10">' + U.esc(rulesText) + "</textarea></div>" +
       '<div class="field field-wide"><label for="playoffNote">Extra note (optional)</label>' +
       '<textarea id="playoffNote" rows="3" placeholder="e.g. Playoffs on Sunday 6 March at DKPL Ground">' + U.esc(s.adminNote) + "</textarea></div>" +
-      '<div class="row-actions"><button class="btn btn-primary" type="submit">Save &amp; sync</button></div></form></section>" +
+      '<div class="row-actions"><button class="btn btn-primary" type="submit">Save &amp; sync</button></div></form></section>' +
       (DKPL.playoffs ? DKPL.playoffs.sectionHtml(S.settingsRaw()) : "")
     );
   }
@@ -592,12 +603,24 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    U.mount("admin");
-    U.requireAdmin(app(), function () {
-      S.ready().then(render).catch(function () {
-        render();
+  function boot() {
+    try {
+      if (U && U.mount) U.mount("admin");
+    } catch (err) {
+      console.error(err);
+    }
+    if (U && U.requireAdmin) {
+      U.requireAdmin(app(), function () {
+        (S && S.ready ? S.ready() : Promise.resolve()).then(render).catch(function () {
+          render();
+        });
       });
-    });
-  });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
 })();
