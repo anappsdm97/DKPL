@@ -592,9 +592,12 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  document.addEventListener("DOMContentLoaded", function () {
     U.mount("admin");
-    await S.ready();
-    U.requireAdmin(app(), render);
+    U.requireAdmin(app(), function () {
+      S.ready().then(render).catch(function () {
+        render();
+      });
+    });
   });
 })();

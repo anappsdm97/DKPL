@@ -64,10 +64,24 @@
     return post({ action: "auth", mode: mode, pin: pin });
   }
 
+  async function fetchWithTimeout(url, options, ms) {
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = setTimeout(function () {
+      if (ctrl) ctrl.abort();
+    }, ms || 8000);
+    try {
+      const opts = Object.assign({}, options || {});
+      if (ctrl) opts.signal = ctrl.signal;
+      return await fetch(url, opts);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function pull() {
     if (!enabled()) return null;
-    const url = cfg.apiBase + (cfg.apiBase.indexOf("?") >= 0 ? "&" : "?") + "action=all";
-    const res = await fetch(url, { redirect: "follow", cache: "no-store" });
+    const url = cfg.apiBase + (cfg.apiBase.indexOf("?") >= 0 ? "&" : "?") + "action=all&_=" + Date.now();
+    const res = await fetchWithTimeout(url, { redirect: "follow", cache: "no-store" }, 8000);
     const text = await res.text();
     if (!res.ok) throw new Error("Sheets read failed: " + res.status);
     return parseJson(text);

@@ -678,12 +678,13 @@
     document.getElementById("scorerLock").addEventListener("click", U.signOutScorer);
   }
 
-  document.addEventListener("DOMContentLoaded", async function () {
+  document.addEventListener("DOMContentLoaded", function () {
     U.mount("");
-    await S.ready();
     U.requireScorer(app(), function () {
       mountScorerChrome();
-      render();
+      S.ready().then(render).catch(function () {
+        render();
+      });
     });
   });
 })();

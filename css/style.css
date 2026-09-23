@@ -74,6 +74,26 @@ h1, h2, h3, h4 {
 
 /* ------------------------------------------------------------- header */
 
+.asset-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--gold);
+  color: #1a1404;
+  text-align: center;
+}
+
+.asset-banner button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 14px;
+  width: 100%;
+  cursor: pointer;
+}
+
 .site-header {
   position: sticky;
   top: 0;

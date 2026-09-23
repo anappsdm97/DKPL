@@ -103,6 +103,29 @@
         toggle.setAttribute("aria-expanded", String(open));
       });
     }
+    checkAssetVersion();
+  }
+
+  function checkAssetVersion() {
+    if (!cfg.assetVersion || document.getElementById("assetBanner")) return;
+    fetch(base() + "js/version.txt?t=" + Date.now(), { cache: "no-store" })
+      .then(function (res) {
+        return res.text();
+      })
+      .then(function (remote) {
+        if (String(remote || "").trim() !== String(cfg.assetVersion)) {
+          const bar = document.createElement("div");
+          bar.id = "assetBanner";
+          bar.className = "asset-banner";
+          bar.innerHTML =
+            '<button type="button" id="assetReload">New site update is ready — tap to refresh</button>';
+          document.body.insertBefore(bar, document.body.firstChild);
+          document.getElementById("assetReload").addEventListener("click", function () {
+            location.reload();
+          });
+        }
+      })
+      .catch(function () {});
   }
 
   /**
@@ -177,11 +200,12 @@
   }
 
   function isAdminSession() {
-    return DKPL.api && DKPL.api.getRole() === "admin";
+    return Boolean(DKPL.api && DKPL.api.getToken() && DKPL.api.getRole() === "admin");
   }
 
   function isScorerSession() {
-    const role = DKPL.api && DKPL.api.getRole();
+    if (!DKPL.api || !DKPL.api.getToken()) return false;
+    const role = DKPL.api.getRole();
     return role === "admin" || role === "scorer";
   }
 
