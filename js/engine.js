@@ -32,8 +32,8 @@
     return Math.floor(balls / 6) + (balls % 6) / 6;
   }
 
-  function newInnings(battingTeamId, bowlingTeamId, target) {
-    return {
+  function newInnings(battingTeamId, bowlingTeamId, target, opts) {
+    const inn = {
       battingTeamId: battingTeamId,
       bowlingTeamId: bowlingTeamId,
       target: target || null,
@@ -41,9 +41,15 @@
       overBowlers: [],
       deliveries: []
     };
+    const o = opts || {};
+    if (o.overs) inn.overs = o.overs;
+    if (o.maxWickets) inn.maxWickets = o.maxWickets;
+    if (o.superOver) inn.superOver = true;
+    return inn;
   }
 
   function label(d) {
+    if (d.extra === "PEN") return "P" + (d.runs || 5);
     const base = d.extra === "WD" ? "wd" : d.extra === "NB" ? "nb" : "";
     const runs = d.runs || 0;
     let text;
@@ -57,6 +63,8 @@
    * Replays every delivery and returns the full scoreboard state.
    */
   function computeInnings(inn, oversLimit, maxWickets) {
+    if (inn && Number(inn.overs) > 0) oversLimit = Number(inn.overs);
+    if (inn && Number(inn.maxWickets) > 0) maxWickets = Number(inn.maxWickets);
     const bat = {};
     const bowl = {};
     const field = {};
@@ -80,7 +88,11 @@
     let legal = 0;
     let wides = 0;
     let noBalls = 0;
+    let penalties = 0;
     let overRuns = 0;
+    let partRuns = 0;
+    let partBalls = 0;
+    const fow = [];
     let striker = inn.openers.strikerId;
     let nonStriker = inn.openers.nonStrikerId;
 
@@ -97,7 +109,11 @@
       let batterRuns = 0;
       let isLegal = true;
 
-      if (d.extra === "WD") {
+      if (d.extra === "PEN") {
+        conceded = d.runs || 5;
+        penalties += conceded;
+        isLegal = false;
+      } else if (d.extra === "WD") {
         conceded = 1 + (d.runs || 0);
         wides += conceded;
         isLegal = false;
@@ -112,8 +128,9 @@
       }
 
       runs += conceded;
-      b.runs += conceded;
-      overRuns += conceded;
+      if (d.extra !== "PEN") b.runs += conceded;
+      if (d.extra !== "PEN") overRuns += conceded;
+      partRuns += conceded;
 
       // A wide is not faced by the batter; a no-ball is.
       if (d.extra !== "WD") {
@@ -126,6 +143,7 @@
       if (isLegal) {
         legal += 1;
         b.balls += 1;
+        partBalls += 1;
       }
 
       if ((d.runs || 0) % 2 === 1) {
@@ -151,6 +169,15 @@
           else if (d.wicket.type === "Stumped") f.stumpings += 1;
         }
         const newId = d.wicket.newBatsmanId || "";
+        fow.push({
+          wicket: wickets,
+          score: runs,
+          overs: oversText(legal),
+          batterId: d.wicket.outBatsmanId,
+          stand: partRuns
+        });
+        partRuns = 0;
+        partBalls = 0;
         if (striker === d.wicket.outBatsmanId) striker = newId;
         else if (nonStriker === d.wicket.outBatsmanId) nonStriker = newId;
       }
@@ -178,7 +205,9 @@
       ballsLimit: ballsLimit,
       oversText: oversText(legal),
       oversFloat: oversFloat(legal),
-      extras: { wides: wides, noBalls: noBalls, total: wides + noBalls },
+      extras: { wides: wides, noBalls: noBalls, penalties: penalties, total: wides + noBalls + penalties },
+      partnership: { runs: partRuns, balls: partBalls },
+      fallOfWickets: fow,
       bat: bat,
       bowl: bowl,
       field: field,
@@ -267,26 +296,49 @@
       });
   }
 
-  function resultText(match, teamName, oversLimit, maxWickets) {
-    if (!match.innings || match.innings.length < 2) return "";
-    const first = computeInnings(match.innings[0], oversLimit, maxWickets);
-    const second = computeInnings(match.innings[1], oversLimit, maxWickets);
-    const chasingTeam = match.innings[1].battingTeamId;
-    const defendingTeam = match.innings[0].battingTeamId;
+  function lastSuperOverPair(match) {
+    const so = (match.innings || []).filter(function (inn) {
+      return inn.superOver;
+    });
+    return so.length >= 2 ? so.slice(-2) : null;
+  }
+
+  function pairResult(firstInn, secondInn, teamName, oversLimit, maxWickets, superOver) {
+    const first = computeInnings(firstInn, firstInn.overs || oversLimit, firstInn.maxWickets || maxWickets);
+    const second = computeInnings(secondInn, secondInn.overs || oversLimit, secondInn.maxWickets || maxWickets);
+    const chasingTeam = secondInn.battingTeamId;
+    const defendingTeam = firstInn.battingTeamId;
+    const chaseCap = secondInn.maxWickets || maxWickets;
 
     if (second.runs > first.runs) {
       return {
         winnerId: chasingTeam,
-        text: teamName(chasingTeam) + " won by " + (maxWickets - second.wickets) + " wickets"
+        text: superOver
+          ? teamName(chasingTeam) + " won in Super Over"
+          : teamName(chasingTeam) + " won by " + (chaseCap - second.wickets) + " wickets"
       };
     }
     if (second.runs === first.runs) {
-      return { winnerId: "", text: "Match tied" };
+      return { winnerId: "", text: superOver ? "Super Over tied" : "Match tied" };
     }
     return {
       winnerId: defendingTeam,
-      text: teamName(defendingTeam) + " won by " + (first.runs - second.runs) + " runs"
+      text: superOver
+        ? teamName(defendingTeam) + " won in Super Over"
+        : teamName(defendingTeam) + " won by " + (first.runs - second.runs) + " runs"
     };
+  }
+
+  function resultText(match, teamName, oversLimit, maxWickets) {
+    const soPair = lastSuperOverPair(match);
+    if (soPair) {
+      return pairResult(soPair[0], soPair[1], teamName, oversLimit, maxWickets, true);
+    }
+    const regular = (match.innings || []).filter(function (inn) {
+      return !inn.superOver;
+    });
+    if (regular.length < 2) return { winnerId: "", text: "" };
+    return pairResult(regular[0], regular[1], teamName, oversLimit, maxWickets, false);
   }
 
   DKPL.engine = {

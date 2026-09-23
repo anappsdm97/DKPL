@@ -43,11 +43,22 @@
 
   /* ---------------------------------------------------------------- views */
 
+  function currentMaxWickets(m) {
+    const inn = currentInnings(m);
+    if (inn && Number(inn.maxWickets) > 0) return Number(inn.maxWickets);
+    return S.maxWickets(inn ? inn.battingTeamId : m.teamA);
+  }
+
   function render() {
     const m = match();
     if (!m) return renderPicker();
     if (!m.innings || !m.innings.length || m.status === "Upcoming") return renderSetup(m);
     if (m.status === "Completed") return renderResult(m);
+    const inn = currentInnings(m);
+    if (inn && !inn.openers.strikerId) {
+      openInnings();
+      return;
+    }
     return renderScoring(m);
   }
 
@@ -226,7 +237,7 @@
     const batting = inn.battingTeamId;
 
     const strikerId = await U.choose("Who is on strike?", squadOptions(batting, [], true), {
-      note: S.teamName(batting) + " opening pair",
+      note: (inn.superOver ? "Super Over · " : "") + S.teamName(batting) + (inn.superOver ? " (1 over, 2 wickets)" : " opening pair"),
       cancel: false
     });
     const nonStrikerId = await U.choose("Who is at the non-striker end?", squadOptions(batting, [strikerId], true), {
@@ -256,7 +267,9 @@
       '<div class="row-actions scorer-links">' +
       '<a class="btn btn-ghost" href="live.html">Public view</a>' +
       (U.isAdminSession() ? '<a class="btn btn-ghost" href="admin.html">Admin</a>' : "") +
-      '<button class="btn btn-ghost" type="button" id="endInnings">End innings ' + inningsNo + "</button>" +
+      '<button class="btn btn-ghost" type="button" id="endInnings">End ' +
+      (currentInnings(m).superOver ? "Super Over innings" : "innings " + inningsNo) +
+      "</button>" +
       "</div>";
 
     bindScoring();
@@ -274,7 +287,7 @@
         "Run out on this no-ball: tap OUT, then enter runs off the bat on the same no-ball.";
     } else {
       hint =
-        "Normal ball: tap runs. Run out with runs: tap OUT → Run Out → pick runs on that ball (not a separate run tap first). UNDO fixes mistakes.";
+        "Normal ball: tap runs. +5 is a time penalty to the batting score (fielding delay). Run out with runs: tap OUT first. UNDO fixes mistakes.";
     }
 
     const keys = [0, 1, 2, 3, 4, 5, 6]
@@ -289,6 +302,7 @@
       keys +
       '<button class="key extra' + (pendingExtra === "WD" ? " active" : "") + '" type="button" data-key="WD">WD</button>' +
       '<button class="key extra' + (pendingExtra === "NB" ? " active" : "") + '" type="button" data-key="NB">NB</button>' +
+      '<button class="key extra" type="button" data-key="PEN">+5</button>' +
       '<button class="key out" type="button" data-key="OUT">OUT</button>' +
       '<button class="key undo" type="button" data-key="UNDO">UNDO</button>' +
       "</div>" +
@@ -298,7 +312,46 @@
   }
 
   function breakPanel(m, state) {
-    if (m.innings.length === 1) {
+    const inn = currentInnings(m);
+    const soCount = (m.innings || []).filter(function (i) {
+      return i.superOver;
+    }).length;
+
+    if (inn.superOver) {
+      if (soCount % 2 === 1) {
+        return (
+          '<div class="card break-panel">' +
+          "<h2>Super Over — innings break</h2>" +
+          "<p>" + U.esc(S.teamName(inn.battingTeamId)) + " scored " + state.runs + "/" + state.wickets +
+          " in " + state.oversText + " overs.</p>" +
+          "<p class=\"situation\">Target " + (state.runs + 1) + " from 1 over (2 wickets)</p>" +
+          '<button class="btn btn-primary" type="button" id="startSuperOver">Start chasing Super Over</button>' +
+          "</div>"
+        );
+      }
+      const soResult = E.resultText(m, S.teamName, m.overs, currentMaxWickets(m));
+      if (!soResult.winnerId) {
+        return (
+          '<div class="card break-panel">' +
+          "<h2>Super Over tied</h2>" +
+          "<p>Scores are still level. Play another Super Over to decide the winner.</p>" +
+          '<button class="btn btn-primary" type="button" id="startSuperOver">Start another Super Over</button>' +
+          "</div>"
+        );
+      }
+      return (
+        '<div class="card break-panel">' +
+        "<h2>Super Over complete</h2>" +
+        "<p class=\"situation\">" + U.esc(soResult.text) + "</p>" +
+        '<button class="btn btn-primary" type="button" id="publish">Publish result</button>' +
+        "</div>"
+      );
+    }
+
+    const regular = (m.innings || []).filter(function (i) {
+      return !i.superOver;
+    });
+    if (regular.length === 1) {
       return (
         '<div class="card break-panel">' +
         "<h2>Innings break</h2>" +
@@ -309,9 +362,27 @@
         "</div>"
       );
     }
+
+    const regularResult = E.resultText(
+      { innings: regular, overs: m.overs },
+      S.teamName,
+      m.overs,
+      S.maxWickets(regular[1].battingTeamId)
+    );
+    if (!regularResult.winnerId) {
+      return (
+        '<div class="card break-panel">' +
+        "<h2>Match tied</h2>" +
+        "<p>Scores are level. Tournament rules require a Super Over (1 over each, 2 wickets) to decide the winner.</p>" +
+        '<button class="btn btn-primary" type="button" id="startSuperOver">Start Super Over</button>' +
+        "</div>"
+      );
+    }
+
     return (
       '<div class="card break-panel">' +
       "<h2>Innings complete</h2>" +
+      "<p class=\"situation\">" + U.esc(regularResult.text) + "</p>" +
       '<button class="btn btn-primary" type="button" id="publish">Publish result</button>' +
       "</div>"
     );
@@ -323,7 +394,7 @@
       '<article class="card result-card">' +
       '<span class="badge done">Result</span>' +
       "<h2>" + U.esc(m.result ? m.result.text : "Match completed") + "</h2>" +
-      (mvp ? '<p class="situation">Player of the match: ' + U.esc(S.playerName(mvp.playerId)) + " · " + mvp.points + " MVP points</p>" : "") +
+      (mvp ? '<p class="situation">Man of the match: ' + U.esc(S.playerName(mvp.playerId)) + " · " + mvp.points + " MVP points</p>" : "") +
       "</article>" +
       DKPL.board.fullHtml(m) +
       '<div class="row-actions"><a class="btn btn-primary" href="scorer.html">Score another match</a>' +
@@ -355,6 +426,9 @@
 
     const second = document.getElementById("startSecond");
     if (second) second.addEventListener("click", startSecondInnings);
+
+    const superOver = document.getElementById("startSuperOver");
+    if (superOver) superOver.addEventListener("click", startSuperOver);
 
     const publish = document.getElementById("publish");
     if (publish) publish.addEventListener("click", publishResult);
@@ -412,6 +486,11 @@
       return render();
     }
 
+    if (key === "PEN") {
+      pendingExtra = null;
+      return applyDelivery({ runs: 5, extra: "PEN", wicket: null });
+    }
+
     if (key === "OUT") return handleWicket(m, state);
 
     const runs = Number(key);
@@ -461,7 +540,7 @@
       if (fielderId === null) return;
     }
 
-    const maxWickets = S.maxWickets(inn.battingTeamId);
+    const maxWickets = currentMaxWickets(m);
     let newBatsmanId = "";
     if (state.wickets + 1 < maxWickets) {
       const used = Object.keys(state.bat).concat([state.strikerId, state.nonStrikerId]);
@@ -530,17 +609,61 @@
     openInnings();
   }
 
+  async function startSuperOver() {
+    const m = match();
+    const so = (m.innings || []).filter(function (i) {
+      return i.superOver;
+    });
+    const last = so[so.length - 1];
+    const lastState = last ? S.inningsState(m, m.innings.indexOf(last)) : null;
+    const startNewPair = !last || (lastState && lastState.complete && so.length % 2 === 0);
+
+    let battingId;
+    let bowlingId;
+    let target = null;
+
+    if (startNewPair) {
+      const pick = await U.choose("Who bats first in the Super Over?", [
+        { value: m.teamA, label: S.teamName(m.teamA) },
+        { value: m.teamB, label: S.teamName(m.teamB) }
+      ]);
+      if (!pick) return;
+      battingId = pick;
+      bowlingId = pick === m.teamA ? m.teamB : m.teamA;
+    } else {
+      battingId = last.bowlingTeamId;
+      bowlingId = last.battingTeamId;
+      target = (lastState ? lastState.runs : 0) + 1;
+    }
+
+    m.innings.push(
+      E.newInnings(battingId, bowlingId, target, { overs: 1, maxWickets: 2, superOver: true })
+    );
+    m.status = "Live";
+    S.saveMatch(m);
+    openInnings();
+  }
+
   function publishResult() {
     const m = match();
-    const chasingTeam = m.innings[1].battingTeamId;
+    const chasingTeam = (m.innings[m.innings.length - 1] || {}).battingTeamId || m.teamB;
     const result = E.resultText(m, S.teamName, m.overs, S.maxWickets(chasingTeam));
+    if (!result.winnerId && /tied/i.test(result.text || "")) {
+      U.toast("Scores are level — start a Super Over");
+      return;
+    }
     const mvp = E.matchMvp(m, m.overs, 10)[0];
 
     m.result = result;
     m.playerOfMatch = mvp ? mvp.playerId : "";
     m.status = "Completed";
     S.saveMatch(m);
-    U.toast("Result published");
+    const playoffs = S.syncPlayoffFixtures();
+    U.toast(
+      playoffs.ok && playoffs.created.length
+        ? "Result published · playoff fixtures updated"
+        : "Result published"
+    );
     render();
   }
 

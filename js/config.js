@@ -160,7 +160,7 @@ window.DKPL_CONFIG = {
       "After the league, playoffs use the Qualifier / Eliminator format — win and you advance.",
     defaultRules: [
       "Whoever wins more league matches earns more points and climbs the table (NRR breaks ties). Top 4 qualify for playoffs.",
-      "League fixtures are separate from the playoff bracket — league results only set seeds (1st–4th).",
+      "League fixtures are separate from the playoff bracket — league results only set seeds (1st–4th). Playoff fixtures are created automatically from the table.",
       "In every playoff match, the team that wins advances to the next round.",
       "Qualifier 1 (1st vs 2nd): winner goes straight to the Final; loser plays Qualifier 2.",
       "Eliminator (3rd vs 4th): winner plays Qualifier 2; loser is eliminated.",

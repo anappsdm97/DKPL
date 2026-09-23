@@ -474,6 +474,22 @@ table.mini td {
   margin-right: 4px;
 }
 
+.over-line {
+  margin-top: 6px;
+}
+
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.share-row .btn {
+  padding: 8px 12px;
+  font-size: 0.82rem;
+}
+
 .ball {
   min-width: 30px;
   height: 30px;

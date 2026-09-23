@@ -43,6 +43,16 @@
     if (match.status === "Completed") {
       return match.result ? match.result.text : "Match completed";
     }
+    const inn = match.innings[index];
+    if (inn && inn.superOver) {
+      if (state.target) {
+        if (state.runsNeeded <= 0) return "Super Over target reached";
+        return (
+          "Super Over · need " + state.runsNeeded + " runs from " + state.ballsLeft + " balls"
+        );
+      }
+      return "Super Over · " + state.runs + "/" + state.wickets + " (" + state.oversText + ")";
+    }
     if (index === 1 && state.target) {
       if (state.runsNeeded <= 0) return "Target reached";
       if (state.ballsLeft <= 0) return "Overs completed";
@@ -89,26 +99,126 @@
       "</td><td>" + (bowl ? bowl.wickets : 0) + "</td><td>" + econ + "</td></tr>" +
       "</tbody></table></div>" +
       "</div>" +
+      partnershipLine(state) +
       thisOver(state)
     );
+  }
+
+  function ballSpan(b) {
+    const cls = b.indexOf("W") >= 0 ? "ball out" : b === "4" ? "ball four" : b === "6" ? "ball six" :
+      b.indexOf("wd") === 0 || b.indexOf("nb") === 0 || b.charAt(0) === "P" ? "ball extra" : "ball";
+    return '<span class="' + cls + '">' + esc(b) + "</span>";
   }
 
   function thisOver(state) {
     if (!state.thisOver || !state.thisOver.length) return "";
     return (
       '<div class="timeline"><span class="timeline-label">This over</span>' +
-      state.thisOver
-        .map(function (b) {
-          const cls = b.indexOf("W") >= 0 ? "ball out" : b === "4" ? "ball four" : b === "6" ? "ball six" :
-            b.indexOf("wd") === 0 || b.indexOf("nb") === 0 ? "ball extra" : "ball";
-          return '<span class="' + cls + '">' + esc(b) + "</span>";
-        })
-        .join("") +
+      state.thisOver.map(ballSpan).join("") +
       "</div>"
     );
   }
 
+  function partnershipLine(state) {
+    if (!state || !state.partnership || (!state.strikerId && !state.nonStrikerId)) return "";
+    return (
+      '<p class="muted extras-line">Partnership ' + state.partnership.runs +
+      " (" + state.partnership.balls + "b)</p>"
+    );
+  }
+
+  function tossLine(match) {
+    if (!match.toss || !match.toss.winnerId) return "";
+    const name = store().teamName(match.toss.winnerId);
+    const dec = match.toss.decision === "field" ? "bowl" : "bat";
+    return '<p class="muted extras-line">Toss: ' + esc(name) + " chose to " + dec + "</p>";
+  }
+
+  function oversList(state, compact) {
+    if (!state.overs || !state.overs.length) return "";
+    const rows = state.overs;
+    const start = compact && rows.length > 3 ? rows.length - 3 : 0;
+    let html = "";
+    for (let i = start; i < rows.length; i++) {
+      if (!rows[i] || !rows[i].length) continue;
+      html +=
+        '<div class="timeline over-line"><span class="timeline-label">Ov ' + (i + 1) + "</span>" +
+        rows[i].map(ballSpan).join("") +
+        "</div>";
+    }
+    return html;
+  }
+
+  function fowLine(state) {
+    if (!state.fallOfWickets || !state.fallOfWickets.length) return "";
+    const bits = state.fallOfWickets.map(function (w) {
+      return w.score + "/" + w.wicket + " (" + esc(store().playerName(w.batterId)) + ", " + w.overs + ")";
+    });
+    return '<p class="muted extras-line">FOW ' + bits.join(" · ") + "</p>";
+  }
+
+  function shareText(match) {
+    const cfg = window.DKPL_CONFIG;
+    const lines = [(cfg.tournamentName || "DKPL") + " · " + (match.stage || "League")];
+    (match.innings || []).forEach(function (inn, i) {
+      if (i > 1 && !inn.superOver) return;
+      const st = store().inningsState(match, i);
+      if (!st) return;
+      const tag = inn.superOver ? "SO " : "";
+      lines.push(tag + store().teamName(inn.battingTeamId) + " " + st.runs + "/" + st.wickets + " (" + st.oversText + ")");
+    });
+    const sit = situation(match);
+    if (sit) lines.push(sit);
+    if (match.playerOfMatch) lines.push("Man of the match: " + store().playerName(match.playerOfMatch));
+    return lines.join("\n");
+  }
+
+  function shareButtons(match) {
+    if (!match || !match.id || match.status === "Upcoming") return "";
+    return (
+      '<div class="share-row">' +
+      '<button type="button" class="btn btn-ghost" data-share-score="' + esc(match.id) + '" data-share-via="copy">Copy score</button>' +
+      '<button type="button" class="btn btn-ghost" data-share-score="' + esc(match.id) + '" data-share-via="wa">WhatsApp</button>' +
+      "</div>"
+    );
+  }
+
+  function bindShare() {
+    if (document.body.dataset.dkplShare === "yes") return;
+    document.body.dataset.dkplShare = "yes";
+    document.body.addEventListener("click", function (e) {
+      const btn = e.target.closest("[data-share-score]");
+      if (!btn) return;
+      const match = store().matchById(btn.getAttribute("data-share-score"));
+      if (!match) return;
+      const text = shareText(match);
+      if (btn.getAttribute("data-share-via") === "wa") {
+        window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          if (DKPL.ui && DKPL.ui.toast) DKPL.ui.toast("Score copied");
+        });
+      }
+    });
+  }
+
+  function superOverLine(match) {
+    const so = (match.innings || []).filter(function (inn) {
+      return inn.superOver;
+    });
+    if (!so.length) return "";
+    const bits = so.map(function (inn) {
+      const idx = match.innings.indexOf(inn);
+      const st = store().inningsState(match, idx);
+      return store().teamName(inn.battingTeamId) + " " + (st ? st.runs + "/" + st.wickets : "—");
+    });
+    return '<p class="muted extras-line">Super Over · ' + esc(bits.join(" · ")) + "</p>";
+  }
+
   function miniHtml(match) {
+    bindShare();
     const innings = match.innings || [];
     const first = innings[0] ? store().inningsState(match, 0) : null;
     const second = innings[1] ? store().inningsState(match, 1) : null;
@@ -118,7 +228,13 @@
       '<p class="match-meta">' + esc(match.stage || "League") + " · " + esc(match.venue || "") + "</p>" +
       teamLine(innings[0] ? innings[0].battingTeamId : match.teamA, first, match.overs) +
       teamLine(innings[1] ? innings[1].battingTeamId : match.teamB, second, match.overs) +
-      '<div class="situation">' + esc(situation(match)) + "</div>"
+      tossLine(match) +
+      superOverLine(match) +
+      '<div class="situation">' + esc(situation(match)) + "</div>" +
+      (match.status === "Completed" && match.playerOfMatch
+        ? '<p class="situation">Man of the match: ' + esc(store().playerName(match.playerOfMatch)) + "</p>"
+        : "") +
+      shareButtons(match)
     );
   }
 
@@ -159,12 +275,16 @@
 
     return (
       '<article class="card innings-card">' +
-      '<div class="innings-head"><h3>' + esc(batting) + "</h3><strong>" + state.runs + "/" + state.wickets +
+      '<div class="innings-head"><h3>' + esc(inn.superOver ? "Super Over · " + batting : batting) + "</h3><strong>" + state.runs + "/" + state.wickets +
       ' <span class="muted">(' + state.oversText + ")</span></strong></div>" +
       '<div class="table-wrap"><table><thead><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr></thead><tbody>' +
       (batRows || '<tr><td colspan="6" class="muted">No deliveries yet</td></tr>') +
       "</tbody></table></div>" +
-      '<p class="muted extras-line">Extras ' + state.extras.total + " (wd " + state.extras.wides + ", nb " + state.extras.noBalls + ")</p>" +
+      '<p class="muted extras-line">Extras ' + state.extras.total +
+      " (wd " + state.extras.wides + ", nb " + state.extras.noBalls +
+      (state.extras.penalties ? ", pen " + state.extras.penalties : "") + ")</p>" +
+      fowLine(state) +
+      oversList(state, false) +
       '<div class="table-wrap"><table><thead><tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th></tr></thead><tbody>' +
       (bowlRows || '<tr><td colspan="6" class="muted">No deliveries yet</td></tr>') +
       "</tbody></table></div>" +
@@ -190,6 +310,7 @@
     currentPlayers: currentPlayers,
     situation: situation,
     thisOver: thisOver,
+    shareText: shareText,
     rate: rate
   };
 })();

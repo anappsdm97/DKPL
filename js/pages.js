@@ -89,11 +89,14 @@
           : U.empty("No completed matches yet.");
       }
 
+      const leagueDone = S.leagueMatches
+        ? S.leagueMatches().filter(function (m) { return m.status === "Completed"; }).length
+        : completed.length;
       el("statsSlot").innerHTML =
         '<div class="card stat-card"><strong>' + S.teams().length + "</strong><span>Teams</span></div>" +
         '<div class="card stat-card"><strong>' + cfg.leagueMatches + "</strong><span>League matches</span></div>" +
-        '<div class="card stat-card"><strong>' + completed.length + "</strong><span>Completed</span></div>" +
-        '<div class="card stat-card"><strong>' + Math.max(0, cfg.leagueMatches - completed.length) + "</strong><span>Remaining</span></div>";
+        '<div class="card stat-card"><strong>' + leagueDone + "</strong><span>League completed</span></div>" +
+        '<div class="card stat-card"><strong>' + Math.max(0, cfg.leagueMatches - leagueDone) + "</strong><span>League remaining</span></div>";
 
       el("tableSlot").innerHTML = table.length
         ? '<div class="card table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>Pts</th><th>NRR</th></tr></thead><tbody>' +
@@ -112,11 +115,12 @@
       const mvp = boards.mvp[0];
       el("mvpSlot").innerHTML = mvp
         ? '<article class="card mvp-card">' + U.avatar(mvp.name, mvp.photo, "", "lg") +
-          "<div><p class=\"kicker\">Leading MVP</p><h3>" + U.esc(mvp.name) + "</h3>" +
+          "<div><p class=\"kicker\">Man of the series · MVP</p><h3>" + U.esc(mvp.name) + "</h3>" +
           '<p class="muted">' + U.esc(mvp.teamName) + " · " + mvp.runs + " runs · " + mvp.wickets + " wickets</p>" +
           '<p class="score">' + mvp.mvp + " pts</p></div></article>"
-        : U.empty("MVP rankings appear after the first match.");
+        : U.empty("Man of the series (MVP) appears after the first match.");
 
+        renderPlayoffsBlock();
       }
 
       function renderRulesOnce() {
@@ -257,7 +261,7 @@
             })
             .join("") +
           "</tbody></table>" +
-          '<p class="notice">Top ' + cfg.qualify + " teams enter the playoffs after the league. NRR breaks ties.</p></div>"
+          '<p class="notice">Top ' + cfg.qualify + " after all league matches. Playoff results do not change this table. NRR breaks ties.</p></div>"
         : U.empty("No teams yet.", "admin.html", "Add teams");
     },
 
@@ -268,7 +272,7 @@
         ["Most wickets", b.mostWickets, "wickets"],
         ["Highest score", b.highestScore, "highest"],
         ["Best bowling", b.bestBowling, "best"],
-        ["MVP ranking", b.mvp, "mvp"]
+        ["Man of the series (MVP)", b.mvp, "mvp"]
       ];
 
       const any = blocks.some(function (x) {
@@ -302,7 +306,8 @@
             })
             .join("") +
           "</div>" +
-          '<section class="card"><h2>How MVP points are calculated</h2>' +
+          '<section class="card"><h2>How awards work</h2>' +
+          "<p class=\"muted\">Man of the match is the player with the most MVP points in that match. Man of the series is the same MVP score added up across every completed match (league and playoffs).</p>" +
           '<div class="mvp-rules"><div><h4>Batting</h4><p>1 per run · +1 per four · +2 per six · +10 for a fifty · +25 for a hundred</p></div>' +
           "<div><h4>Bowling</h4><p>20 per wicket · 10 per maiden · economy bonus up to +15</p></div>" +
           "<div><h4>Fielding</h4><p>8 per catch · 10 per run out · 10 per stumping</p></div></div></section>"

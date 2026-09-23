@@ -221,9 +221,10 @@
     return (
       editForm +
       '<section class="card"><h2>Fixtures</h2>' +
-      '<p class="muted">Delete test matches or edit fixtures below. Round robin adds any missing league pairs (6 teams = 15).</p>' +
+      '<p class="muted">Delete test matches or edit fixtures below. Round robin adds any missing league pairs (6 teams = 15). Playoffs are created from the points table after the league ends.</p>' +
       '<div class="row-actions">' +
       '<button class="btn btn-primary" type="button" id="genLeague">Generate league fixtures</button>' +
+      '<button class="btn btn-ghost" type="button" id="genPlayoffs">Create / refresh playoffs</button>' +
       '<a class="btn btn-ghost" href="scorer.html">Start a match</a>' +
       "</div></section>" +
       '<section class="card"><h2>All matches (' + matches.length + ")</h2>" +
@@ -269,7 +270,7 @@
     const rulesText = s.rules.join("\n");
     return (
       '<section class="card"><h2>Playoffs &amp; qualification text</h2>' +
-      '<p class="muted">Shown on the home page and fixtures. Playoff bracket after all league matches. Edit anytime — syncs to Google Sheets (Settings tab).</p>' +
+      '<p class="muted">Shown on the home page and fixtures. Knockout fixtures are created automatically from the league table. Edit this copy anytime — syncs to Google Sheets (Settings tab).</p>' +
       '<form id="playoffsForm"><div class="field field-wide">' +
       "<label for=\"playoffIntro\">Introduction</label>" +
       '<textarea id="playoffIntro" rows="4">' + U.esc(s.intro) + "</textarea></div>" +
@@ -506,6 +507,19 @@
       if (target.id === "genLeague") {
         const created = S.generateLeague(cfg.venueDefault);
         U.toast(created.length ? created.length + " fixtures created" : "Fixtures already exist");
+        return render();
+      }
+
+      if (target.id === "genPlayoffs") {
+        const out = S.syncPlayoffFixtures();
+        if (!out.ok && out.reason === "league") {
+          U.toast("Finish all " + cfg.leagueMatches + " league matches first");
+        } else if (!out.ok) {
+          U.toast("Need four teams on the points table");
+        } else {
+          U.toast("Playoff fixtures updated");
+          syncSheet();
+        }
         return render();
       }
 

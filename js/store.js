@@ -198,7 +198,14 @@
     inningsState: function (match, index) {
       const inn = match.innings && match.innings[index];
       if (!inn) return null;
-      return DKPL.engine.computeInnings(inn, match.overs, store.maxWickets(inn.battingTeamId));
+      const n = inn.deliveries ? inn.deliveries.length : 0;
+      const key = (match.id || "") + ":" + index + ":" + n + (inn.closed ? "c" : "");
+      if (!store._innCache) store._innCache = {};
+      if (store._innCache[key]) return store._innCache[key];
+      if (Object.keys(store._innCache).length > 16) store._innCache = {};
+      const state = DKPL.engine.computeInnings(inn, match.overs, store.maxWickets(inn.battingTeamId));
+      store._innCache[key] = state;
+      return state;
     },
 
     pointsTable: function () {
@@ -222,6 +229,7 @@
       });
 
       store.completedMatches().forEach(function (m) {
+        if (store.isPlayoffStage(m.stage)) return;
         if (!m.innings || m.innings.length < 2) return;
         const a = store.inningsState(m, 0);
         const b = store.inningsState(m, 1);
@@ -413,6 +421,106 @@
         }
       }
       return created;
+    },
+
+    isPlayoffStage: function (stage) {
+      return cfg.playoffs.stages.indexOf(stage) >= 0;
+    },
+
+    playoffMatch: function (stage) {
+      return (
+        store.matches().find(function (m) {
+          return m.stage === stage;
+        }) || null
+      );
+    },
+
+    leagueMatches: function () {
+      return store.matches().filter(function (m) {
+        return !store.isPlayoffStage(m.stage);
+      });
+    },
+
+    leagueComplete: function () {
+      const league = store.leagueMatches();
+      const done = league.filter(function (m) {
+        return m.status === "Completed";
+      }).length;
+      return done >= cfg.leagueMatches;
+    },
+
+    playoffWinner: function (stage) {
+      const m = store.playoffMatch(stage);
+      return m && m.status === "Completed" && m.result && m.result.winnerId ? m.result.winnerId : "";
+    },
+
+    playoffLoser: function (stage) {
+      const m = store.playoffMatch(stage);
+      const winner = store.playoffWinner(stage);
+      if (!m || !winner) return "";
+      return winner === m.teamA ? m.teamB : m.teamA;
+    },
+
+    /**
+     * After the league, create or refresh knockout fixtures from the points table:
+     * Q1 = 1v2, Eliminator = 3v4, Q2 = loser Q1 vs winner Eliminator, Final = winner Q1 vs winner Q2.
+     * Does not overwrite Live or Completed playoff matches.
+     */
+    syncPlayoffFixtures: function () {
+      if (!store.leagueComplete()) {
+        return { ok: false, reason: "league", created: [] };
+      }
+      const table = store.pointsTable();
+      if (table.length < cfg.qualify) {
+        return { ok: false, reason: "teams", created: [] };
+      }
+
+      const created = [];
+      function ensure(stage, teamA, teamB) {
+        if (!teamA || !teamB || teamA === teamB) return null;
+        const existing = store.playoffMatch(stage);
+        if (existing) {
+          if (existing.status !== "Upcoming") return existing;
+          if (existing.teamA === teamA && existing.teamB === teamB) return existing;
+          const updated = store.saveMatch({
+            id: existing.id,
+            teamA: teamA,
+            teamB: teamB
+          });
+          created.push(updated);
+          return updated;
+        }
+        const row = store.saveMatch({
+          stage: stage,
+          teamA: teamA,
+          teamB: teamB,
+          overs: cfg.oversOptions[cfg.oversOptions.length - 1],
+          venue: cfg.venueDefault,
+          date: "",
+          status: "Upcoming",
+          innings: [],
+          result: null
+        });
+        created.push(row);
+        return row;
+      }
+
+      ensure("Qualifier 1", table[0].teamId, table[1].teamId);
+      ensure("Eliminator", table[2].teamId, table[3].teamId);
+
+      const q1Loser = store.playoffLoser("Qualifier 1");
+      const elimWinner = store.playoffWinner("Eliminator");
+      if (q1Loser && elimWinner) {
+        ensure("Qualifier 2", q1Loser, elimWinner);
+      }
+
+      const q1Winner = store.playoffWinner("Qualifier 1");
+      const q2Winner = store.playoffWinner("Qualifier 2");
+      if (q1Winner && q2Winner) {
+        ensure("Final", q1Winner, q2Winner);
+      }
+
+      return { ok: true, reason: "", created: created };
     },
 
     /** Pull from Sheets when configured; never wipe local data with an empty remote copy. */
