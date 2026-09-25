@@ -71,8 +71,21 @@
     );
   }
 
+  function ensureCreditFonts() {
+    if (document.getElementById("dkplCreditFont")) return;
+    const link = document.createElement("link");
+    link.id = "dkplCreditFont";
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,600;1,600;1,700&display=swap";
+    document.head.appendChild(link);
+  }
+
   function footer() {
     const b = base();
+    const year = (cfg && cfg.season) || "2026";
+    const holder = (cfg && cfg.credits && cfg.credits.copyrightBy) || (cfg && cfg.fullName) || "DKPL";
+    const developer = (cfg && cfg.credits && cfg.credits.developedBy) || "";
     return (
       '<footer class="site-footer"><div class="wrap footer-inner">' +
       "<div><strong>" + esc((cfg && cfg.fullName) || "DKPL") + "</strong>" +
@@ -85,6 +98,12 @@
         .join("<br>") +
       "</p></div>" +
       '<div><a href="' + b + 'pages/admin.html">Admin console</a> · <a href="' + b + 'pages/scorer.html">Scorer</a></div>' +
+      "</div>" +
+      '<div class="wrap footer-credits">' +
+      '<p class="footer-copy">© ' + esc(year) + " " + esc(holder) + ". All rights reserved.</p>" +
+      (developer
+        ? '<p class="footer-dev">Website developed by <span>' + esc(developer) + "</span></p>"
+        : "") +
       "</div></footer>"
     );
   }
@@ -93,7 +112,10 @@
     const head = document.getElementById("siteHeader");
     const foot = document.getElementById("siteFooter");
     if (head) head.innerHTML = header(active);
-    if (foot) foot.innerHTML = footer();
+    if (foot) {
+      ensureCreditFonts();
+      foot.innerHTML = footer();
+    }
 
     const toggle = document.querySelector(".nav-toggle");
     const nav = document.querySelector(".site-nav");

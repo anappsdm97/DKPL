@@ -1,6 +1,6 @@
 window.DKPL_CONFIG = {
   /** Bump this AND js/version.txt together whenever you push site updates. */
-  assetVersion: "260925b",
+  assetVersion: "260925c",
 
   tournamentName: "DKPL 2026",
   fullName: "Doddakittadahalli Premier League 2026",
@@ -11,6 +11,12 @@ window.DKPL_CONFIG = {
   qualify: 4,
   oversOptions: [6, 8, 10],
   venueDefault: "Doddakittadahalli Ground",
+
+  /** Shown in the site footer on every page. Change developedBy to your name. */
+  credits: {
+    copyrightBy: "Doddakittadahalli Premier League",
+    developedBy: "Anapps"
+  },
 
   /**
    * After all league matches, top 4 enter Q1 / Eliminator / Q2 / Final playoffs (not 1v4 / 2v3 semis).

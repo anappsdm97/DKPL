@@ -1455,6 +1455,37 @@ select {
   text-decoration: none;
 }
 
+.footer-credits {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.footer-copy {
+  font-family: "Cinzel", "Times New Roman", serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
+.footer-dev {
+  margin-top: 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.2rem;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.footer-dev span {
+  color: var(--gold);
+  font-style: italic;
+  font-weight: 700;
+}
+
 /* --------------------------------------------------------- responsive */
 
 @media (min-width: 700px) {
