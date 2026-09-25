@@ -110,7 +110,6 @@
       const upcoming = S.upcomingMatches().slice(0, 3);
       const completed = S.completedMatches();
       const latest = completed[completed.length - 1] || null;
-      const table = S.pointsTable();
       const boards = S.leaderboards();
 
       if (S.isEmpty()) {
@@ -150,10 +149,6 @@
         '<div class="card stat-card"><strong>' + cfg.leagueMatches + "</strong><span>League matches</span></div>" +
         '<div class="card stat-card"><strong>' + leagueDone + "</strong><span>League completed</span></div>" +
         '<div class="card stat-card"><strong>' + Math.max(0, cfg.leagueMatches - leagueDone) + "</strong><span>League remaining</span></div>";
-
-      el("tableSlot").innerHTML = table.length
-        ? pointsTableMarkup(table, "")
-        : U.empty("The points table fills up automatically once matches are played.");
 
       const mvp = boards.mvp[0];
       el("mvpSlot").innerHTML = mvp
