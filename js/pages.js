@@ -23,6 +23,59 @@
     return '<article class="card fixture-card">' + body + title + "</article>";
   }
 
+  function formHtml(form) {
+    if (!form || !form.length) return "—";
+    return (
+      '<span class="form-pills">' +
+      form
+        .map(function (r) {
+          const cls = r === "W" ? "win" : r === "L" ? "loss" : "tie";
+          const title = r === "W" ? "Won" : r === "L" ? "Lost" : "Tied";
+          return '<span class="form-pill ' + cls + '" title="' + title + '">' + r + "</span>";
+        })
+        .join("") +
+      "</span>"
+    );
+  }
+
+  function nextHtml(next) {
+    if (!next || !next.length) return "—";
+    return next
+      .map(function (n) {
+        return (n.live ? "Live vs " : "vs ") + U.esc(n.short);
+      })
+      .join(", ");
+  }
+
+  function pointsTableMarkup(rows, notice) {
+    return (
+      '<div class="card table-wrap"><table class="points-table"><thead><tr>' +
+      "<th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>T</th><th>Pts</th><th>NRR</th>" +
+      '<th title="Last 5 league results">Recent</th>' +
+      '<th title="Next 3 fixtures">Next</th>' +
+      '<th title="Runs scored / overs faced">For</th>' +
+      '<th title="Runs conceded / overs bowled">Against</th>' +
+      "</tr></thead><tbody>" +
+      rows
+        .map(function (r, i) {
+          return (
+            "<tr" + (i < cfg.qualify ? ' class="qualified"' : "") + "><td>" + (i + 1) + "</td>" +
+            '<td class="team-cell">' + U.avatar(r.name, r.logo, "") + U.esc(r.name) + "</td>" +
+            "<td>" + r.played + "</td><td>" + r.won + "</td><td>" + r.lost + "</td><td>" + r.tied +
+            "</td><td>" + r.points + "</td><td>" + r.nrr + "</td>" +
+            "<td>" + formHtml(r.form) + "</td>" +
+            '<td class="next-cell">' + nextHtml(r.next) + "</td>" +
+            "<td>" + U.esc(r.forText || "—") + "</td>" +
+            "<td>" + U.esc(r.againstText || "—") + "</td></tr>"
+          );
+        })
+        .join("") +
+      "</tbody></table>" +
+      (notice || "") +
+      "</div>"
+    );
+  }
+
   function syncBanner() {
     if (!DKPL.api.enabled()) {
       return (
@@ -99,17 +152,7 @@
         '<div class="card stat-card"><strong>' + Math.max(0, cfg.leagueMatches - leagueDone) + "</strong><span>League remaining</span></div>";
 
       el("tableSlot").innerHTML = table.length
-        ? '<div class="card table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>Pts</th><th>NRR</th></tr></thead><tbody>' +
-          table
-            .map(function (r, i) {
-              return (
-                "<tr" + (i < cfg.qualify ? ' class="qualified"' : "") + "><td>" + (i + 1) + "</td>" +
-                '<td class="team-cell">' + U.avatar(r.name, r.logo, "") + U.esc(r.name) + "</td><td>" + r.played +
-                "</td><td>" + r.won + "</td><td>" + r.lost + "</td><td>" + r.points + "</td><td>" + r.nrr + "</td></tr>"
-              );
-            })
-            .join("") +
-          "</tbody></table></div>"
+        ? pointsTableMarkup(table, "")
         : U.empty("The points table fills up automatically once matches are played.");
 
       const mvp = boards.mvp[0];
@@ -249,19 +292,12 @@
     points: function () {
       const rows = S.pointsTable();
       el("app").innerHTML = rows.length
-        ? '<div class="card table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>T</th><th>Pts</th><th>NRR</th></tr></thead><tbody>' +
-          rows
-            .map(function (r, i) {
-              return (
-                "<tr" + (i < cfg.qualify ? ' class="qualified"' : "") + "><td>" + (i + 1) + "</td>" +
-                '<td class="team-cell">' + U.avatar(r.name, r.logo, "") + U.esc(r.name) + "</td>" +
-                "<td>" + r.played + "</td><td>" + r.won + "</td><td>" + r.lost + "</td><td>" + r.tied +
-                "</td><td>" + r.points + "</td><td>" + r.nrr + "</td></tr>"
-              );
-            })
-            .join("") +
-          "</tbody></table>" +
-          '<p class="notice">Top ' + cfg.qualify + " after all league matches. Playoff results do not change this table. NRR breaks ties.</p></div>"
+        ? pointsTableMarkup(
+            rows,
+            '<p class="notice">Top ' +
+              cfg.qualify +
+              " after all league matches. Playoff results do not change P–Pts–NRR. Recent is the last 5 league results. Next is the next 3 fixtures. For / Against is runs / overs (same figures used for NRR).</p>"
+          )
         : U.empty("No teams yet.", "admin.html", "Add teams");
     },
 

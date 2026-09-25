@@ -209,11 +209,30 @@
     },
 
     pointsTable: function () {
+      function matchTime(m) {
+        const d = Date.parse(m && m.date ? m.date : "");
+        return isNaN(d) ? 0 : d;
+      }
+
+      function oversLabel(ov) {
+        if (!ov) return "0.0";
+        const whole = Math.floor(ov + 1e-9);
+        let balls = Math.round((ov - whole) * 6);
+        if (balls === 6) return whole + 1 + ".0";
+        if (balls < 0) balls = 0;
+        return whole + "." + balls;
+      }
+
+      function runsOvers(runs, overs) {
+        return runs + "/" + oversLabel(overs);
+      }
+
       const rows = {};
       store.teams().forEach(function (t) {
         rows[t.id] = {
           teamId: t.id,
           name: t.name,
+          short: t.short || "",
           logo: t.logo || "",
           played: 0,
           won: 0,
@@ -224,7 +243,11 @@
           forOvers: 0,
           againstRuns: 0,
           againstOvers: 0,
-          nrr: 0
+          nrr: 0,
+          form: [],
+          next: [],
+          forText: "—",
+          againstText: "—"
         };
       });
 
@@ -265,12 +288,61 @@
         }
       });
 
+      store
+        .completedMatches()
+        .filter(function (m) {
+          return !store.isPlayoffStage(m.stage) && m.innings && m.innings.length >= 2;
+        })
+        .sort(function (a, b) {
+          return matchTime(a) - matchTime(b);
+        })
+        .forEach(function (m) {
+          const sideA = m.teamA;
+          const sideB = m.teamB;
+          if (!rows[sideA] || !rows[sideB]) return;
+          if (m.result && m.result.winnerId && rows[m.result.winnerId]) {
+            rows[m.result.winnerId].form.push("W");
+            const loserId = m.result.winnerId === sideA ? sideB : sideA;
+            if (rows[loserId]) rows[loserId].form.push("L");
+          } else {
+            rows[sideA].form.push("T");
+            rows[sideB].form.push("T");
+          }
+        });
+
+      store
+        .matches()
+        .filter(function (m) {
+          return m.status === "Live" || m.status === "Upcoming";
+        })
+        .sort(function (a, b) {
+          if (a.status === "Live" && b.status !== "Live") return -1;
+          if (b.status === "Live" && a.status !== "Live") return 1;
+          return matchTime(a) - matchTime(b);
+        })
+        .forEach(function (m) {
+          function addNext(teamId, oppId) {
+            const r = rows[teamId];
+            if (!r || r.next.length >= 3) return;
+            const opp = store.teamById(oppId);
+            r.next.push({
+              short: (opp && (opp.short || opp.name)) || store.teamName(oppId),
+              live: m.status === "Live"
+            });
+          }
+          addNext(m.teamA, m.teamB);
+          addNext(m.teamB, m.teamA);
+        });
+
       return Object.keys(rows)
         .map(function (id) {
           const r = rows[id];
           const scored = r.forOvers ? r.forRuns / r.forOvers : 0;
           const conceded = r.againstOvers ? r.againstRuns / r.againstOvers : 0;
           r.nrr = Number((scored - conceded).toFixed(3));
+          r.form = r.form.slice(-5);
+          r.forText = r.played ? runsOvers(r.forRuns, r.forOvers) : "—";
+          r.againstText = r.played ? runsOvers(r.againstRuns, r.againstOvers) : "—";
           return r;
         })
         .sort(function (x, y) {

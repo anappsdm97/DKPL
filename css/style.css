@@ -439,6 +439,44 @@ tr.qualified td {
   gap: 8px;
 }
 
+.form-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.form-pill {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+}
+
+.form-pill.win {
+  background: #15803d;
+}
+
+.form-pill.loss {
+  background: #b91c1c;
+}
+
+.form-pill.tie {
+  background: #6b7280;
+}
+
+.next-cell {
+  color: var(--muted);
+  font-size: 0.8rem;
+  max-width: 200px;
+  white-space: normal;
+}
+
 .mini-cards {
   display: grid;
   gap: 10px;
