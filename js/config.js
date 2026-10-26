@@ -1,6 +1,6 @@
 window.DKPL_CONFIG = {
   /** Bump this AND js/version.txt together whenever you push site updates. */
-  assetVersion: "260925c",
+  assetVersion: "261026a",
 
   tournamentName: "DKPL 2026",
   fullName: "Doddakittadahalli Premier League 2026",
