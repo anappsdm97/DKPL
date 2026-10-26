@@ -147,10 +147,20 @@
         partBalls += 1;
       }
 
-      if ((d.runs || 0) % 2 === 1) {
+      function exchangeCrease() {
         const t = striker;
         striker = nonStriker;
         nonStriker = t;
+      }
+
+      // Completed runs only. An incomplete run does not add to the total,
+      // but if they had crossed, the broken wicket is at the other end.
+      if ((d.runs || 0) % 2 === 1) exchangeCrease();
+
+      if (d.wicket && d.wicket.type === "Run Out" && (d.wicket.end === "striker" || d.wicket.end === "nonStriker")) {
+        const dismissedAtStriker = striker === d.wicket.outBatsmanId;
+        const wicketAtStriker = d.wicket.end === "striker";
+        if (dismissedAtStriker !== wicketAtStriker) exchangeCrease();
       }
 
       if (d.wicket) {
@@ -186,9 +196,7 @@
       if (isLegal && legal % 6 === 0) {
         if (overRuns === 0) b.maidens += 1;
         overRuns = 0;
-        const t = striker;
-        striker = nonStriker;
-        nonStriker = t;
+        exchangeCrease();
       }
     });
 
