@@ -47,7 +47,7 @@ window.DKPL_RULES = {
           "Normal ball: tap the runs (0–6).",
           "Wide: tap WD once, then tap WD again for a wide only (1 run), or tap 1–4 for a wide plus bye runs (team total = 1 wide + byes; byes are not credited to a batter).",
           "No ball: tap NB once, then tap NB again for a no ball only (1 run), or tap 0–6 for runs off the bat (team total = 1 no ball + those runs; the batter gets the runs off the bat and the ball counts as faced).",
-          "Run out on a normal ball: tap OUT → Run Out → runs on that ball → who is out → fielder. Do not tap the run number first as a separate ball.",
+          "Run out on a normal ball: tap OUT → Run Out → runs already completed → who is out → which end the wicket was broken → fielder. Out short at the striker's end going for a 2nd run: enter 1 run and choose Striker's end, so the new batter takes strike. Do not tap the run number first as a separate ball.",
           "Run out on a wide: tap WD (wide armed), then OUT → Run Out → choose bye runs on that wide (0–4; the wide run is added automatically) → who is out → fielder.",
           "Run out on a no ball: tap NB, then OUT → Run Out → runs off the bat on that no ball → who is out → fielder.",
           "If you tap the wrong thing, use UNDO and enter the ball again."
