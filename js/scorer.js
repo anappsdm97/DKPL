@@ -519,16 +519,33 @@
 
     let outBatsmanId = state.strikerId;
     let runsOnBall = 0;
+    let runOutEnd = "";
     if (type === "Run Out") {
       const runsPick = await promptRunOutRuns(extra);
       if (runsPick === null || runsPick === undefined) return;
       runsOnBall = Number(runsPick) || 0;
 
       outBatsmanId = await U.choose("Which batter is out?", [
-        { value: state.strikerId, label: S.playerName(state.strikerId), sub: "Striker" },
-        { value: state.nonStrikerId, label: S.playerName(state.nonStrikerId), sub: "Non-striker" }
+        { value: state.strikerId, label: S.playerName(state.strikerId), sub: "Was on strike at the start of this ball" },
+        { value: state.nonStrikerId, label: S.playerName(state.nonStrikerId), sub: "Was the non-striker at the start of this ball" }
       ]);
       if (!outBatsmanId) return;
+
+      runOutEnd = await U.choose("Which end was the wicket broken?", [
+        {
+          value: "striker",
+          label: "Striker's end",
+          sub: "New batter takes strike. The other batter is at the non-striker's end."
+        },
+        {
+          value: "nonStriker",
+          label: "Non-striker's end",
+          sub: "New batter waits at the non-striker's end. The other batter takes strike."
+        }
+      ], {
+        note: "Out short going for a 2nd run at the striker's end: choose Striker's end. Enter only the runs already completed (usually 1)."
+      });
+      if (!runOutEnd) return;
     }
 
     let fielderId = "";
@@ -554,7 +571,13 @@
     applyDelivery({
       runs: type === "Run Out" ? runsOnBall : 0,
       extra: extra,
-      wicket: { type: type, outBatsmanId: outBatsmanId, fielderId: fielderId || "", newBatsmanId: newBatsmanId }
+      wicket: {
+        type: type,
+        outBatsmanId: outBatsmanId,
+        fielderId: fielderId || "",
+        newBatsmanId: newBatsmanId,
+        end: type === "Run Out" ? runOutEnd : ""
+      }
     });
   }
 
